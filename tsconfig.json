@@ -18,6 +18,7 @@
     "components/**/*.tsx",
     "src/**/*.ts",
     "src/**/*.tsx",
+    "supabase/functions/_shared/**/*.ts",
     "tests/**/*.ts",
     "tests/**/*.tsx",
     "tooling/**/*.ts",
