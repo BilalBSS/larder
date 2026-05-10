@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -e
+
+MSG_FILE=$1
+MSG=$(head -n 1 "$MSG_FILE")
+PHRASES_FILE="tooling/hooks/banned_phrases.txt"
+
+WORDS=$(echo "$MSG" | wc -w | tr -d ' ')
+if [ "$WORDS" -gt 4 ]; then
+  echo "BLOCKED: commit message exceeds 4 words ($WORDS): '$MSG'"
+  exit 1
+fi
+
+if echo "$MSG" | grep -qE '^(feat|fix|chore|docs|refactor|test|build|ci|perf|style):'; then
+  echo "BLOCKED: commit message has prefix: '$MSG'"
+  exit 1
+fi
+
+if echo "$MSG" | grep -qE '^[A-Z]'; then
+  echo "BLOCKED: commit message starts uppercase: '$MSG'"
+  exit 1
+fi
+
+if [ -f "$PHRASES_FILE" ]; then
+  while IFS= read -r phrase; do
+    [ -z "$phrase" ] && continue
+    case "$phrase" in
+      \#*) continue ;;
+    esac
+    if grep -i -F -q "$phrase" "$MSG_FILE"; then
+      echo "BLOCKED: phrase detected in commit message: '$phrase'"
+      exit 1
+    fi
+  done < "$PHRASES_FILE"
+fi
+
+exit 0

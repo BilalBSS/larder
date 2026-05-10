@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -e
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [ "$remote_sha" = "0000000000000000000000000000000000000000" ]; then
+    git log --format=%B "$local_sha" 2>/dev/null | bash tooling/hooks/scan_phrases.sh
+    git diff "$local_sha" 2>/dev/null \
+      -- ':(exclude).husky/*' \
+         ':(exclude)tooling/hooks/*' \
+      | bash tooling/hooks/scan_phrases.sh
+  else
+    git log --format=%B "$remote_sha..$local_sha" 2>/dev/null | bash tooling/hooks/scan_phrases.sh
+    git diff "$remote_sha..$local_sha" 2>/dev/null \
+      -- ':(exclude).husky/*' \
+         ':(exclude)tooling/hooks/*' \
+      | bash tooling/hooks/scan_phrases.sh
+  fi
+done
+
+exit 0

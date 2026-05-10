@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -e
+
+npx lint-staged
+
+npx tsc --noEmit
+
+git diff --cached --diff-filter=AM \
+  -- ':(exclude).husky/*' \
+     ':(exclude)tooling/hooks/*' \
+  | bash tooling/hooks/scan_phrases.sh
+
+bash tooling/hooks/lint_comments.sh

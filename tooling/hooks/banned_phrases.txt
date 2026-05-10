@@ -1,0 +1,12 @@
+regression test for the bug where
+this implementation uses
+we now properly
+covers the race where
+silent root cause
+added because
+note that
+Co-Authored-By:
+noreply@anthropic
+Generated with
+🤖
+(L3 fallback)
