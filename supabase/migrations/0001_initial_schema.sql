@@ -23,7 +23,7 @@ $$;
 create table households (
   id uuid primary key default gen_random_uuid(),
   name text not null,
-  relationship_type text not null check (relationship_type in ('couple','family','roommates','solo')),
+  household_type text not null check (household_type in ('family','couple','roommates','shared')) default 'family',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   created_by_user_id uuid not null references auth.users(id),
@@ -442,7 +442,7 @@ create table subscriptions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade unique,
   revenuecat_user_id text not null unique,
-  tier text not null check (tier in ('free','premium_monthly','premium_yearly','lifetime')) default 'free',
+  tier text not null check (tier in ('free','solo_monthly','solo_yearly','household_monthly','household_yearly')) default 'free',
   current_period_start timestamptz,
   current_period_end timestamptz,
   is_active boolean not null default false,
@@ -469,3 +469,48 @@ create unlogged table recipe_suggestion_cache (
 );
 
 create index recipe_suggestion_cache_household_idx on recipe_suggestion_cache (household_id, expires_at);
+
+-- ============================================================================
+-- per-user explicit preferences
+-- ============================================================================
+
+create table user_preferences (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  cuisines_liked text[] not null default '{}',
+  cuisines_disliked text[] not null default '{}',
+  ingredients_avoid text[] not null default '{}',
+  allergens text[] not null default '{}',
+  skill_level text not null check (skill_level in ('beginner','comfortable','confident','advanced')) default 'comfortable',
+  preferred_cook_time_min integer not null default 30,
+  preferred_servings integer not null default 2,
+  daily_calorie_target integer,
+  protein_target_g integer,
+  carb_target_g integer,
+  fat_target_g integer,
+  metric_system boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create trigger trg_user_preferences_updated before update on user_preferences
+  for each row execute function set_updated_at();
+
+-- ============================================================================
+-- recipe interaction events
+-- ============================================================================
+
+create table recipe_interactions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  household_id uuid not null references households(id) on delete cascade,
+  recipe_id uuid references recipes(id) on delete cascade,
+  event_type text not null check (event_type in (
+    'viewed','saved','skipped','regenerated',
+    'started_cooking','completed','abandoned'
+  )),
+  context jsonb not null default '{}'::jsonb,
+  occurred_at timestamptz not null default now()
+);
+
+create index recipe_interactions_user_idx on recipe_interactions (user_id, occurred_at desc);
+create index recipe_interactions_recipe_idx on recipe_interactions (recipe_id, event_type);
