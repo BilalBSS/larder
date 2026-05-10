@@ -50,6 +50,8 @@ alter table notification_preferences enable row level security;
 alter table notifications_log enable row level security;
 alter table subscriptions enable row level security;
 alter table recipe_suggestion_cache enable row level security;
+alter table user_preferences enable row level security;
+alter table recipe_interactions enable row level security;
 
 -- ============================================================================
 -- households (bootstrap)
@@ -215,6 +217,23 @@ create policy subscriptions_self on subscriptions
   using (user_id = auth.uid())
   with check (user_id = auth.uid());
 
+create policy user_preferences_self on user_preferences
+  for all to authenticated
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
+
+-- ============================================================================
+-- recipe_interactions
+-- ============================================================================
+
+create policy recipe_interactions_select on recipe_interactions
+  for select to authenticated
+  using (user_id = auth.uid() or is_household_member(household_id));
+
+create policy recipe_interactions_insert on recipe_interactions
+  for insert to authenticated
+  with check (user_id = auth.uid() and is_household_member(household_id));
+
 -- ============================================================================
 -- explicit grants (auto-expose disabled in project settings)
 -- ============================================================================
@@ -242,7 +261,9 @@ grant select, insert, update, delete on
   notification_preferences,
   notifications_log,
   subscriptions,
-  recipe_suggestion_cache
+  recipe_suggestion_cache,
+  user_preferences
 to authenticated;
 
+grant select, insert on recipe_interactions to authenticated;
 grant select on canonical_ingredients to authenticated;
