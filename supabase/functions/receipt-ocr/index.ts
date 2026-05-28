@@ -1,5 +1,5 @@
 // / receipt ocr edge entry
-// @ts-nocheck — deno-only runtime; tsc excludes this file
+// @ts-nocheck
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { Redis } from 'npm:@upstash/redis@1';
 

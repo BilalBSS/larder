@@ -31,7 +31,7 @@ describe('verifyAttestation', () => {
     expect(verifyAttestation(stale, { allowDevStub: true, now: () => now })).toBe(false);
   });
 
-  it('rejects non-stub tokens until real verifier lands', () => {
+  it('rejects non-stub tokens', () => {
     expect(
       verifyAttestation(
         { ...fresh, token: 'real-app-attest-token' },
