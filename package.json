@@ -15,6 +15,7 @@
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
     "test:rls": "vitest run tests/rls",
+    "test:ui": "jest",
     "test:watch": "vitest",
     "prepare": "husky"
   },
@@ -25,6 +26,7 @@
     "@react-navigation/elements": "^2.6.3",
     "@react-navigation/native": "^7.1.8",
     "@sentry/react-native": "^8.11.0",
+    "@shopify/flash-list": "2.0.2",
     "@supabase/supabase-js": "^2.105.4",
     "expo": "~54.0.33",
     "expo-constants": "~18.0.13",
@@ -38,6 +40,7 @@
     "expo-symbols": "~1.0.8",
     "expo-system-ui": "~6.0.9",
     "expo-web-browser": "~15.0.10",
+    "nativewind": "^4.2.4",
     "posthog-react-native": "^4.45.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
@@ -52,6 +55,8 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@testing-library/react-native": "^13.3.3",
+    "@types/jest": "^29.5.14",
     "@types/node": "^25.6.0",
     "@types/react": "~19.1.0",
     "@vitest/coverage-v8": "^4.1.5",
@@ -60,8 +65,12 @@
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import": "^2.32.0",
     "husky": "^9.1.7",
+    "jest": "^29.7.0",
+    "jest-expo": "~54.0.0",
     "lint-staged": "^16.4.0",
     "prettier": "^3.8.3",
+    "react-test-renderer": "^19.1.0",
+    "tailwindcss": "^3.4.19",
     "typescript": "~5.9.2",
     "typescript-eslint": "^8.59.2",
     "vitest": "^4.1.5"
