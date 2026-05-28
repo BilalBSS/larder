@@ -11,6 +11,7 @@ import {
   ForbiddenHousehold,
   handle,
   MissingIdempotencyKey,
+  RateLimited,
   type ReceiptOcrRequest,
 } from './handler.ts';
 
@@ -20,6 +21,8 @@ const UPSTASH_URL = Deno.env.get('UPSTASH_REDIS_REST_URL');
 const UPSTASH_TOKEN = Deno.env.get('UPSTASH_REDIS_REST_TOKEN');
 const DAILY_CAP_CENTS = Number(Deno.env.get('LLM_DAILY_CAP_CENTS') ?? '500');
 const MONTHLY_CAP_CENTS = Number(Deno.env.get('LLM_MONTHLY_CAP_CENTS') ?? '5000');
+const RATE_WINDOW_SECONDS = Number(Deno.env.get('RECEIPT_OCR_RATE_WINDOW_SECONDS') ?? '60');
+const RATE_MAX_PER_WINDOW = Number(Deno.env.get('RECEIPT_OCR_RATE_MAX') ?? '30');
 
 if (
   SUPABASE_URL === undefined ||
@@ -112,6 +115,12 @@ Deno.serve(async (req) => {
           dailyCapCents: DAILY_CAP_CENTS,
           monthlyCapCents: MONTHLY_CAP_CENTS,
         },
+        rateLimit: {
+          redis,
+          logger,
+          windowSeconds: RATE_WINDOW_SECONDS,
+          maxPerWindow: RATE_MAX_PER_WINDOW,
+        },
       },
       body,
     );
@@ -130,6 +139,15 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: err.message }), {
         status: 403,
         headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (err instanceof RateLimited) {
+      return new Response(JSON.stringify({ error: err.message }), {
+        status: 429,
+        headers: {
+          'content-type': 'application/json',
+          'retry-after': String(err.retryAfterSeconds),
+        },
       });
     }
     if (err instanceof SpendingCapExceeded) {

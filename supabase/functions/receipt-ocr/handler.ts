@@ -4,6 +4,7 @@ import type { RequestContext } from '../_shared/context';
 import type { ServerLogger } from '../_shared/logger';
 import type { OCRProvider, ServerOCRLineItem } from '../_shared/llm/types';
 import { runOcr } from '../_shared/llm/router';
+import { check as checkRateLimit, type RedisLike } from '../_shared/ratelimit';
 import {
   precheck as precheckSpend,
   record as recordSpend,
@@ -67,6 +68,12 @@ export interface ReceiptOcrDeps {
     readonly dailyCapCents: number;
     readonly monthlyCapCents: number;
   };
+  readonly rateLimit: {
+    readonly redis: RedisLike;
+    readonly logger: ServerLogger;
+    readonly windowSeconds: number;
+    readonly maxPerWindow: number;
+  };
   readonly stalledAfterMs?: number;
   readonly now?: () => Date;
 }
@@ -85,6 +92,15 @@ export class ForbiddenHousehold extends Error {
   }
 }
 
+export class RateLimited extends Error {
+  readonly retryAfterSeconds: number;
+  constructor(retryAfterSeconds: number) {
+    super('rate_limited');
+    this.name = 'RateLimited';
+    this.retryAfterSeconds = retryAfterSeconds;
+  }
+}
+
 const DEFAULT_STALLED_AFTER_MS = 5 * 60 * 1000;
 
 export async function handle(
@@ -92,6 +108,17 @@ export async function handle(
   req: ReceiptOcrRequest,
 ): Promise<ReceiptOcrResponse> {
   const { ctx } = deps;
+
+  const rl = await checkRateLimit(
+    { redis: deps.rateLimit.redis, logger: deps.rateLimit.logger },
+    {
+      key: `ratelimit:receipt-ocr:${ctx.user.id}`,
+      windowSeconds: deps.rateLimit.windowSeconds,
+      maxPerWindow: deps.rateLimit.maxPerWindow,
+    },
+  );
+  if (!rl.allowed) throw new RateLimited(rl.retryAfterSeconds ?? deps.rateLimit.windowSeconds);
+
   const idempotencyKey = ctx.idempotencyKey;
   if (idempotencyKey === null) throw new MissingIdempotencyKey();
 

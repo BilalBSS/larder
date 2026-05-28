@@ -9,6 +9,7 @@ import {
   ForbiddenHousehold,
   handle,
   MissingIdempotencyKey,
+  RateLimited,
   type ReceiptDb,
   type ReceiptOcrDeps,
   type ReceiptRow,
@@ -79,6 +80,12 @@ function makeDeps(
       logger,
       dailyCapCents: 1000,
       monthlyCapCents: 10000,
+    },
+    rateLimit: {
+      redis: { incr: vi.fn().mockResolvedValue(1), expire: vi.fn().mockResolvedValue(1) },
+      logger,
+      windowSeconds: 60,
+      maxPerWindow: 30,
     },
     ...(overrides.now !== undefined ? { now: overrides.now } : {}),
     ...(overrides.stalledAfterMs !== undefined ? { stalledAfterMs: overrides.stalledAfterMs } : {}),
@@ -153,6 +160,17 @@ describe('receipt-ocr handler', () => {
     await expect(handle(makeDeps({ idempotencyKey: null }), REQ)).rejects.toBeInstanceOf(
       MissingIdempotencyKey,
     );
+  });
+
+  it('throws RateLimited before any membership check or insert', async () => {
+    const db = makeDb({ insertResult: { data: makeRow(), error: null } });
+    const deps = makeDeps({ db });
+    const overLimit = { incr: vi.fn().mockResolvedValue(31), expire: vi.fn() };
+    await expect(
+      handle({ ...deps, rateLimit: { ...deps.rateLimit, redis: overLimit } }, REQ),
+    ).rejects.toBeInstanceOf(RateLimited);
+    expect(db.isHouseholdMember).not.toHaveBeenCalled();
+    expect(db.insertReceipt).not.toHaveBeenCalled();
   });
 
   it('rejects a non-member before any insert', async () => {
