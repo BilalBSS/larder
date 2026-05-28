@@ -9,7 +9,7 @@ function makeJwt(payload: Record<string, unknown>): string {
       .replace(/=+$/, '')
       .replace(/\+/g, '-')
       .replace(/\//g, '_');
-  return `${enc({ alg: 'HS256', typ: 'JWT' })}.${enc(payload)}.sig`;
+  return `${enc({ alg: 'HS256', typ: 'JWT' })}.${enc({ exp: 4_000_000_000, ...payload })}.sig`;
 }
 
 describe('extractUser', () => {
@@ -42,5 +42,25 @@ describe('extractUser', () => {
   it('throws InvalidAuth when sub claim is empty', () => {
     const jwt = makeJwt({ sub: '' });
     expect(() => extractUser(`Bearer ${jwt}`)).toThrow(InvalidAuth);
+  });
+
+  it('throws InvalidAuth when exp claim is missing', () => {
+    const jwt = makeJwt({ sub: 'user-1', exp: undefined });
+    expect(() => extractUser(`Bearer ${jwt}`)).toThrow(InvalidAuth);
+  });
+
+  it('throws InvalidAuth when exp claim is not a number', () => {
+    const jwt = makeJwt({ sub: 'user-1', exp: 'soon' });
+    expect(() => extractUser(`Bearer ${jwt}`)).toThrow(InvalidAuth);
+  });
+
+  it('throws InvalidAuth when token is expired', () => {
+    const jwt = makeJwt({ sub: 'user-1', exp: 1_000 });
+    expect(() => extractUser(`Bearer ${jwt}`, { now: () => 2_000_000 })).toThrow(InvalidAuth);
+  });
+
+  it('accepts a token whose exp is in the future', () => {
+    const jwt = makeJwt({ sub: 'user-1', exp: 5_000 });
+    expect(extractUser(`Bearer ${jwt}`, { now: () => 1_000_000 })).toEqual({ id: 'user-1' });
   });
 });

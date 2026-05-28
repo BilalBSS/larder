@@ -8,7 +8,11 @@ export class InvalidAuth extends Error {
   }
 }
 
-export function extractUser(authHeader: string | null): AuthUser {
+export interface ExtractUserOptions {
+  readonly now?: () => number;
+}
+
+export function extractUser(authHeader: string | null, opts: ExtractUserOptions = {}): AuthUser {
   if (authHeader === null) throw new InvalidAuth('missing');
   const match = /^Bearer (.+)$/.exec(authHeader);
   if (match === null) throw new InvalidAuth('format');
@@ -25,9 +29,12 @@ export function extractUser(authHeader: string | null): AuthUser {
     throw new InvalidAuth('payload');
   }
   if (typeof payload !== 'object' || payload === null) throw new InvalidAuth('payload');
-  const sub = (payload as { sub?: unknown }).sub;
-  if (typeof sub !== 'string' || sub.length === 0) throw new InvalidAuth('sub');
-  return { id: sub };
+  const claims = payload as { sub?: unknown; exp?: unknown };
+  if (typeof claims.sub !== 'string' || claims.sub.length === 0) throw new InvalidAuth('sub');
+  if (typeof claims.exp !== 'number') throw new InvalidAuth('exp');
+  const nowMs = opts.now === undefined ? Date.now() : opts.now();
+  if (claims.exp * 1000 <= nowMs) throw new InvalidAuth('expired');
+  return { id: claims.sub };
 }
 
 function decodeBase64Url(input: string): string {

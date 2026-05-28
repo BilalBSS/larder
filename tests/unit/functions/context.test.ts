@@ -17,7 +17,7 @@ function makeJwt(payload: Record<string, unknown>): string {
       .replace(/=+$/, '')
       .replace(/\+/g, '-')
       .replace(/\//g, '_');
-  return `${enc({ alg: 'HS256', typ: 'JWT' })}.${enc(payload)}.sig`;
+  return `${enc({ alg: 'HS256', typ: 'JWT' })}.${enc({ exp: 4_000_000_000, ...payload })}.sig`;
 }
 
 function makeHeaders(extra: Record<string, string> = {}): Headers {
