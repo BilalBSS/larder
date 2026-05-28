@@ -78,8 +78,8 @@ Deno.serve(async (req) => {
               .single();
             return { data: res.data, error: res.error };
           },
-          async updateReceiptResult(id, result) {
-            await supabase
+          async updateReceiptResult(id, household_id, result) {
+            const upd = await supabase
               .from('receipts')
               .update({
                 ocr_status: 'succeeded',
@@ -88,12 +88,20 @@ Deno.serve(async (req) => {
                 ocr_confidence: result.confidence,
               })
               .eq('id', id);
-            await supabase
+            if (upd.error) throw upd.error;
+            const del = await supabase.from('receipt_line_items').delete().eq('receipt_id', id);
+            if (del.error) throw del.error;
+            const ins = await supabase
               .from('receipt_line_items')
-              .insert(result.line_items.map((li) => ({ receipt_id: id, ...li })));
+              .insert(result.line_items.map((li) => ({ receipt_id: id, household_id, ...li })));
+            if (ins.error) throw ins.error;
           },
           async updateReceiptFailed(id) {
-            await supabase.from('receipts').update({ ocr_status: 'failed' }).eq('id', id);
+            const res = await supabase
+              .from('receipts')
+              .update({ ocr_status: 'failed' })
+              .eq('id', id);
+            if (res.error) throw res.error;
           },
         },
         ocrChain: [mockOcrProvider('mock-flash-lite'), mockOcrProvider('mock-flash')],

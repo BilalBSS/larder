@@ -88,7 +88,11 @@ describe('receipt-ocr handler', () => {
     const result = await handle(makeDeps({ db }), REQ);
     expect(result.status).toBe('succeeded');
     expect(result.created).toBe(true);
-    expect(db.updateReceiptResult).toHaveBeenCalledOnce();
+    expect(db.updateReceiptResult).toHaveBeenCalledWith(
+      'r-1',
+      'h-1',
+      expect.objectContaining({ total_amount: expect.any(Number) }),
+    );
     expect(db.updateReceiptFailed).not.toHaveBeenCalled();
   });
 

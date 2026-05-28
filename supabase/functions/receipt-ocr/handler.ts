@@ -52,7 +52,7 @@ export interface ReceiptDb {
     readonly household_id: string;
     readonly idempotency_key: string;
   }): Promise<SelectOutcome<ReceiptRow>>;
-  updateReceiptResult(id: string, result: ReceiptOcrUpdate): Promise<void>;
+  updateReceiptResult(id: string, household_id: string, result: ReceiptOcrUpdate): Promise<void>;
   updateReceiptFailed(id: string): Promise<void>;
 }
 
@@ -140,7 +140,7 @@ export async function handle(
       { ocrChain: deps.ocrChain, recipesChain: [], logger: ctx.logger },
       { image_storage_key: req.image_storage_key },
     );
-    await deps.db.updateReceiptResult(row.id, {
+    await deps.db.updateReceiptResult(row.id, row.household_id, {
       total_amount: ocrResult.total_amount,
       tax_amount: ocrResult.tax_amount,
       confidence: ocrResult.confidence,
