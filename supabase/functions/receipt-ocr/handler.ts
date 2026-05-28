@@ -54,6 +54,10 @@ export interface ReceiptDb {
     readonly household_id: string;
     readonly idempotency_key: string;
   }): Promise<SelectOutcome<ReceiptRow>>;
+  claimStalled(input: {
+    readonly id: string;
+    readonly observed_updated_at: string;
+  }): Promise<boolean>;
   updateReceiptResult(id: string, household_id: string, result: ReceiptOcrUpdate): Promise<void>;
   updateReceiptFailed(id: string): Promise<void>;
 }
@@ -75,7 +79,7 @@ export interface ReceiptOcrDeps {
     readonly maxPerWindow: number;
   };
   readonly stalledAfterMs?: number;
-  readonly now?: () => Date;
+  readonly now?: () => number;
 }
 
 export class MissingIdempotencyKey extends Error {
@@ -143,7 +147,7 @@ export async function handle(
       }),
   });
 
-  const now = deps.now === undefined ? new Date() : deps.now();
+  const nowMs = deps.now === undefined ? Date.now() : deps.now();
   const stalledAfter = deps.stalledAfterMs ?? DEFAULT_STALLED_AFTER_MS;
 
   if (!insertResult.created) {
@@ -155,8 +159,15 @@ export async function handle(
         created: false,
       };
     }
-    const age = now.getTime() - new Date(existing.updated_at).getTime();
+    const age = nowMs - new Date(existing.updated_at).getTime();
     if (age <= stalledAfter) {
+      return { receipt_id: existing.id, status: 'pending', created: false };
+    }
+    const claimed = await deps.db.claimStalled({
+      id: existing.id,
+      observed_updated_at: existing.updated_at,
+    });
+    if (!claimed) {
       return { receipt_id: existing.id, status: 'pending', created: false };
     }
   }

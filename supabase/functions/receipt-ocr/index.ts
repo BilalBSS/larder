@@ -102,6 +102,17 @@ Deno.serve(async (req) => {
               .single();
             return { data: res.data, error: res.error };
           },
+          async claimStalled(input) {
+            const res = await supabase
+              .from('receipts')
+              .update({ updated_at: new Date().toISOString() })
+              .eq('id', input.id)
+              .eq('ocr_status', 'pending')
+              .eq('updated_at', input.observed_updated_at)
+              .select('id');
+            if (res.error) throw res.error;
+            return (res.data?.length ?? 0) > 0;
+          },
           async updateReceiptResult(id, household_id, result) {
             const upd = await supabase
               .from('receipts')

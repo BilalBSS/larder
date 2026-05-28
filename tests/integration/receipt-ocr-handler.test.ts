@@ -36,6 +36,7 @@ function makeDb(behavior: {
 }): ReceiptDb & {
   isHouseholdMember: ReturnType<typeof vi.fn>;
   insertReceipt: ReturnType<typeof vi.fn>;
+  claimStalled: ReturnType<typeof vi.fn>;
   updateReceiptResult: ReturnType<typeof vi.fn>;
   updateReceiptFailed: ReturnType<typeof vi.fn>;
 } {
@@ -45,6 +46,7 @@ function makeDb(behavior: {
     isHouseholdMember: vi.fn().mockResolvedValue(behavior.isMember ?? true),
     insertReceipt: vi.fn().mockResolvedValue(behavior.insertResult),
     selectByKey: vi.fn().mockResolvedValue(behavior.selectResult ?? { data: null, error: null }),
+    claimStalled: vi.fn().mockResolvedValue(true),
     updateReceiptResult,
     updateReceiptFailed,
   };
@@ -55,7 +57,7 @@ function makeDeps(
     db?: ReceiptDb;
     ocrChain?: readonly OCRProvider[];
     idempotencyKey?: string | null;
-    now?: () => Date;
+    now?: () => number;
     stalledAfterMs?: number;
   } = {},
 ): ReceiptOcrDeps {
@@ -134,13 +136,13 @@ describe('receipt-ocr handler', () => {
       insertResult: { data: null, error: { code: PG_UNIQUE_VIOLATION } },
       selectResult: { data: existing, error: null },
     });
-    const result = await handle(makeDeps({ db, now: () => now }), REQ);
+    const result = await handle(makeDeps({ db, now: () => now.getTime() }), REQ);
     expect(result.status).toBe('pending');
     expect(result.created).toBe(false);
     expect(db.updateReceiptResult).not.toHaveBeenCalled();
   });
 
-  it('duplicate key with stalled pending re-runs ocr', async () => {
+  it('duplicate key with stalled pending re-runs ocr after claiming', async () => {
     const now = new Date('2026-05-10T10:00:00Z');
     const stale = makeRow({
       ocr_status: 'pending',
@@ -150,10 +152,31 @@ describe('receipt-ocr handler', () => {
       insertResult: { data: null, error: { code: PG_UNIQUE_VIOLATION } },
       selectResult: { data: stale, error: null },
     });
-    const result = await handle(makeDeps({ db, now: () => now }), REQ);
+    const result = await handle(makeDeps({ db, now: () => now.getTime() }), REQ);
     expect(result.status).toBe('succeeded');
     expect(result.created).toBe(false);
+    expect(db.claimStalled).toHaveBeenCalledWith({
+      id: stale.id,
+      observed_updated_at: stale.updated_at,
+    });
     expect(db.updateReceiptResult).toHaveBeenCalledOnce();
+  });
+
+  it('duplicate key with stalled pending returns pending when claim is lost', async () => {
+    const now = new Date('2026-05-10T10:00:00Z');
+    const stale = makeRow({
+      ocr_status: 'pending',
+      updated_at: new Date(now.getTime() - 10 * 60_000).toISOString(),
+    });
+    const db = makeDb({
+      insertResult: { data: null, error: { code: PG_UNIQUE_VIOLATION } },
+      selectResult: { data: stale, error: null },
+    });
+    db.claimStalled.mockResolvedValue(false);
+    const result = await handle(makeDeps({ db, now: () => now.getTime() }), REQ);
+    expect(result.status).toBe('pending');
+    expect(result.created).toBe(false);
+    expect(db.updateReceiptResult).not.toHaveBeenCalled();
   });
 
   it('throws MissingIdempotencyKey when header absent', async () => {
