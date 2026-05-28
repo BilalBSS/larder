@@ -16,14 +16,21 @@ import {
   type ReceiptOcrRequest,
 } from './handler.ts';
 
+function numEnv(name: string, fallback: number): number {
+  const raw = Deno.env.get(name);
+  const n = raw === undefined ? fallback : Number(raw);
+  if (!Number.isFinite(n) || n <= 0) throw new Error(`invalid_env:${name}`);
+  return n;
+}
+
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const UPSTASH_URL = Deno.env.get('UPSTASH_REDIS_REST_URL');
 const UPSTASH_TOKEN = Deno.env.get('UPSTASH_REDIS_REST_TOKEN');
-const DAILY_CAP_CENTS = Number(Deno.env.get('LLM_DAILY_CAP_CENTS') ?? '500');
-const MONTHLY_CAP_CENTS = Number(Deno.env.get('LLM_MONTHLY_CAP_CENTS') ?? '5000');
-const RATE_WINDOW_SECONDS = Number(Deno.env.get('RECEIPT_OCR_RATE_WINDOW_SECONDS') ?? '60');
-const RATE_MAX_PER_WINDOW = Number(Deno.env.get('RECEIPT_OCR_RATE_MAX') ?? '30');
+const DAILY_CAP_CENTS = numEnv('LLM_DAILY_CAP_CENTS', 500);
+const MONTHLY_CAP_CENTS = numEnv('LLM_MONTHLY_CAP_CENTS', 5000);
+const RATE_WINDOW_SECONDS = numEnv('RECEIPT_OCR_RATE_WINDOW_SECONDS', 60);
+const RATE_MAX_PER_WINDOW = numEnv('RECEIPT_OCR_RATE_MAX', 30);
 const ENVIRONMENT = Deno.env.get('ENVIRONMENT') ?? 'development';
 const ATTESTATION_ENFORCED = (Deno.env.get('ATTESTATION_ENFORCED') ?? 'false') === 'true';
 const ATTESTATION_ALLOW_DEV_STUB =
