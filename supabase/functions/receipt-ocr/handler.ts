@@ -8,8 +8,6 @@ import { check as checkRateLimit, type RedisLike } from '../_shared/ratelimit';
 import {
   precheck as precheckSpend,
   record as recordSpend,
-  SpendingCapExceeded,
-  SpendingCapUnavailable,
   type SpendingRedis,
 } from '../_shared/spending-cap';
 
@@ -226,11 +224,7 @@ async function recordSpendBestEffort(
         monthly_cap_cents: deps.spending.monthlyCapCents,
       },
     );
-  } catch (err) {
-    if (err instanceof SpendingCapExceeded || err instanceof SpendingCapUnavailable) {
-      logger.warn('spend_record_post_ocr_failed', { user_id });
-      return;
-    }
-    throw err;
+  } catch {
+    logger.warn('spend_record_post_ocr_failed', { user_id });
   }
 }
