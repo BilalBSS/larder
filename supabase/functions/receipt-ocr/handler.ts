@@ -5,6 +5,7 @@ import type { ServerLogger } from '../_shared/logger';
 import type { OCRProvider, ServerOCRLineItem } from '../_shared/llm/types';
 import { runOcr } from '../_shared/llm/router';
 import {
+  precheck as precheckSpend,
   record as recordSpend,
   SpendingCapExceeded,
   SpendingCapUnavailable,
@@ -134,6 +135,15 @@ export async function handle(
   }
 
   const row = insertResult.row;
+  await precheckSpend(
+    { redis: deps.spending.redis, logger: deps.spending.logger },
+    {
+      user_id: ctx.user.id,
+      daily_cap_cents: deps.spending.dailyCapCents,
+      monthly_cap_cents: deps.spending.monthlyCapCents,
+    },
+  );
+
   let ocrLineItems: readonly ServerOCRLineItem[];
   try {
     const ocrResult = await runOcr(

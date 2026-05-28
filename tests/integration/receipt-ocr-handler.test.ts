@@ -4,6 +4,7 @@ import { makeServerLogger } from '../../supabase/functions/_shared/logger';
 import { mockOcrProvider } from '../../supabase/functions/_shared/llm/mock-providers';
 import type { OCRProvider } from '../../supabase/functions/_shared/llm/types';
 import { PG_UNIQUE_VIOLATION } from '../../supabase/functions/_shared/idempotency';
+import { SpendingCapExceeded } from '../../supabase/functions/_shared/spending-cap';
 import {
   ForbiddenHousehold,
   handle,
@@ -70,7 +71,11 @@ function makeDeps(
     db,
     ocrChain: overrides.ocrChain ?? [mockOcrProvider('mock-flash-lite')],
     spending: {
-      redis: { incrBy: vi.fn().mockResolvedValue(10), expire: vi.fn().mockResolvedValue(1) },
+      redis: {
+        get: vi.fn().mockResolvedValue(null),
+        incrBy: vi.fn().mockResolvedValue(10),
+        expire: vi.fn().mockResolvedValue(1),
+      },
       logger,
       dailyCapCents: 1000,
       monthlyCapCents: 10000,
@@ -157,6 +162,17 @@ describe('receipt-ocr handler', () => {
     expect(db.updateReceiptResult).not.toHaveBeenCalled();
   });
 
+  it('throws over cap and skips ocr without marking failed', async () => {
+    const db = makeDb({ insertResult: { data: makeRow(), error: null } });
+    const deps = makeDeps({ db });
+    const overCap = { get: vi.fn().mockResolvedValue(5000), incrBy: vi.fn(), expire: vi.fn() };
+    await expect(
+      handle({ ...deps, spending: { ...deps.spending, redis: overCap } }, REQ),
+    ).rejects.toBeInstanceOf(SpendingCapExceeded);
+    expect(db.updateReceiptResult).not.toHaveBeenCalled();
+    expect(db.updateReceiptFailed).not.toHaveBeenCalled();
+  });
+
   it('marks failed when every provider in chain throws', async () => {
     const fail: OCRProvider = { name: 'fail', ocr: vi.fn().mockRejectedValue(new Error('boom')) };
     const db = makeDb({ insertResult: { data: makeRow(), error: null } });
@@ -169,6 +185,7 @@ describe('receipt-ocr handler', () => {
   it('still returns succeeded when post-ocr spend record fails', async () => {
     const db = makeDb({ insertResult: { data: makeRow(), error: null } });
     const failingRedis = {
+      get: vi.fn().mockResolvedValue(null),
       incrBy: vi.fn().mockRejectedValue(new Error('redis down')),
       expire: vi.fn(),
     };

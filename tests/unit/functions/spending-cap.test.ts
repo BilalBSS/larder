@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { makeServerLogger } from '../../../supabase/functions/_shared/logger';
 import {
+  precheck,
   record,
   SpendingCapExceeded,
   SpendingCapUnavailable,
@@ -19,8 +20,20 @@ function makeRedis(values: number[]) {
     return next;
   });
   const expire = vi.fn().mockResolvedValue(1);
-  return { incrBy, expire };
+  const get = vi.fn().mockResolvedValue(null);
+  return { get, incrBy, expire };
 }
+
+function makeGetRedis(daily: number | null, monthly: number | null) {
+  const get = vi.fn(async (key: string) => (key.includes(':d:') ? daily : monthly));
+  return { get, incrBy: vi.fn(), expire: vi.fn() };
+}
+
+const CHECK = {
+  user_id: 'u-1',
+  daily_cap_cents: 500,
+  monthly_cap_cents: 5000,
+};
 
 const OPTS = {
   user_id: 'u-1',
@@ -67,10 +80,49 @@ describe('spending-cap.record', () => {
 
   it('fails closed when redis throws', async () => {
     const redis = {
+      get: vi.fn(),
       incrBy: vi.fn().mockRejectedValue(new Error('boom')),
       expire: vi.fn(),
     };
     await expect(record({ redis, logger: silentLogger() }, OPTS)).rejects.toBeInstanceOf(
+      SpendingCapUnavailable,
+    );
+  });
+});
+
+describe('spending-cap.precheck', () => {
+  it('resolves when both counters are under cap', async () => {
+    const redis = makeGetRedis(100, 1000);
+    await expect(precheck({ redis, logger: silentLogger() }, CHECK)).resolves.toBeUndefined();
+  });
+
+  it('treats absent counters as zero', async () => {
+    const redis = makeGetRedis(null, null);
+    await expect(precheck({ redis, logger: silentLogger() }, CHECK)).resolves.toBeUndefined();
+    expect(redis.get).toHaveBeenCalledTimes(2);
+  });
+
+  it('throws daily exceeded when daily counter is at cap', async () => {
+    const redis = makeGetRedis(500, 0);
+    await expect(precheck({ redis, logger: silentLogger() }, CHECK)).rejects.toMatchObject({
+      scope: 'daily',
+    });
+  });
+
+  it('throws monthly exceeded when monthly counter is at cap', async () => {
+    const redis = makeGetRedis(0, 5000);
+    await expect(precheck({ redis, logger: silentLogger() }, CHECK)).rejects.toMatchObject({
+      scope: 'monthly',
+    });
+  });
+
+  it('fails closed when redis throws', async () => {
+    const redis = {
+      get: vi.fn().mockRejectedValue(new Error('boom')),
+      incrBy: vi.fn(),
+      expire: vi.fn(),
+    };
+    await expect(precheck({ redis, logger: silentLogger() }, CHECK)).rejects.toBeInstanceOf(
       SpendingCapUnavailable,
     );
   });

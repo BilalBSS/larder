@@ -6,6 +6,7 @@ import { Redis } from 'npm:@upstash/redis@1';
 import { makeRequestContext } from '../_shared/context.ts';
 import { makeServerLogger } from '../_shared/logger.ts';
 import { mockOcrProvider } from '../_shared/llm/mock-providers.ts';
+import { SpendingCapExceeded, SpendingCapUnavailable } from '../_shared/spending-cap.ts';
 import {
   ForbiddenHousehold,
   handle,
@@ -128,6 +129,18 @@ Deno.serve(async (req) => {
     if (err instanceof ForbiddenHousehold) {
       return new Response(JSON.stringify({ error: err.message }), {
         status: 403,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (err instanceof SpendingCapExceeded) {
+      return new Response(JSON.stringify({ error: err.message }), {
+        status: 429,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (err instanceof SpendingCapUnavailable) {
+      return new Response(JSON.stringify({ error: err.message }), {
+        status: 503,
         headers: { 'content-type': 'application/json' },
       });
     }
