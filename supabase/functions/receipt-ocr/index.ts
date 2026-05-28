@@ -4,6 +4,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { Redis } from 'npm:@upstash/redis@1';
 
 import { makeRequestContext } from '../_shared/context.ts';
+import { AttestationFailed } from '../_shared/attestation.ts';
 import { makeServerLogger } from '../_shared/logger.ts';
 import { mockOcrProvider } from '../_shared/llm/mock-providers.ts';
 import { SpendingCapExceeded, SpendingCapUnavailable } from '../_shared/spending-cap.ts';
@@ -23,6 +24,10 @@ const DAILY_CAP_CENTS = Number(Deno.env.get('LLM_DAILY_CAP_CENTS') ?? '500');
 const MONTHLY_CAP_CENTS = Number(Deno.env.get('LLM_MONTHLY_CAP_CENTS') ?? '5000');
 const RATE_WINDOW_SECONDS = Number(Deno.env.get('RECEIPT_OCR_RATE_WINDOW_SECONDS') ?? '60');
 const RATE_MAX_PER_WINDOW = Number(Deno.env.get('RECEIPT_OCR_RATE_MAX') ?? '30');
+const ENVIRONMENT = Deno.env.get('ENVIRONMENT') ?? 'development';
+const ATTESTATION_ENFORCED = (Deno.env.get('ATTESTATION_ENFORCED') ?? 'false') === 'true';
+const ATTESTATION_ALLOW_DEV_STUB =
+  (Deno.env.get('ATTESTATION_ALLOW_DEV_STUB') ?? 'true') === 'true';
 
 if (
   SUPABASE_URL === undefined ||
@@ -33,6 +38,10 @@ if (
   throw new Error('missing_secrets');
 }
 
+if (ENVIRONMENT === 'production' && ATTESTATION_ALLOW_DEV_STUB) {
+  throw new Error('insecure_attestation_config');
+}
+
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 const redis = new Redis({ url: UPSTASH_URL, token: UPSTASH_TOKEN });
 const baseLogger = makeServerLogger({ console }, { fn: 'receipt-ocr' });
@@ -40,7 +49,11 @@ const baseLogger = makeServerLogger({ console }, { fn: 'receipt-ocr' });
 Deno.serve(async (req) => {
   const logger = baseLogger;
   try {
-    const ctx = makeRequestContext({ headers: req.headers, baseLogger });
+    const ctx = makeRequestContext({
+      headers: req.headers,
+      baseLogger,
+      attestation: { enforced: ATTESTATION_ENFORCED, allowDevStub: ATTESTATION_ALLOW_DEV_STUB },
+    });
     const body = (await req.json()) as ReceiptOcrRequest;
     const result = await handle(
       {
@@ -135,7 +148,7 @@ Deno.serve(async (req) => {
         headers: { 'content-type': 'application/json' },
       });
     }
-    if (err instanceof ForbiddenHousehold) {
+    if (err instanceof ForbiddenHousehold || err instanceof AttestationFailed) {
       return new Response(JSON.stringify({ error: err.message }), {
         status: 403,
         headers: { 'content-type': 'application/json' },

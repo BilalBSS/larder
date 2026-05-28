@@ -4,6 +4,13 @@ import type { AttestationToken } from './types';
 const DEV_STUB_PREFIX = 'dev-stub:';
 const MAX_TOKEN_AGE_MS = 5 * 60 * 1000;
 
+export class AttestationFailed extends Error {
+  constructor() {
+    super('attestation_failed');
+    this.name = 'AttestationFailed';
+  }
+}
+
 export interface VerifyOptions {
   readonly allowDevStub: boolean;
   readonly now?: () => number;
