@@ -5,6 +5,7 @@ import { mockOcrProvider } from '../../supabase/functions/_shared/llm/mock-provi
 import type { OCRProvider } from '../../supabase/functions/_shared/llm/types';
 import { PG_UNIQUE_VIOLATION } from '../../supabase/functions/_shared/idempotency';
 import {
+  ForbiddenHousehold,
   handle,
   MissingIdempotencyKey,
   type ReceiptDb,
@@ -29,13 +30,17 @@ function makeRow(overrides: Partial<ReceiptRow> = {}): ReceiptRow {
 function makeDb(behavior: {
   insertResult: { data: ReceiptRow | null; error: { code?: string } | null };
   selectResult?: { data: ReceiptRow | null; error: unknown };
+  isMember?: boolean;
 }): ReceiptDb & {
+  isHouseholdMember: ReturnType<typeof vi.fn>;
+  insertReceipt: ReturnType<typeof vi.fn>;
   updateReceiptResult: ReturnType<typeof vi.fn>;
   updateReceiptFailed: ReturnType<typeof vi.fn>;
 } {
   const updateReceiptResult = vi.fn().mockResolvedValue(undefined);
   const updateReceiptFailed = vi.fn().mockResolvedValue(undefined);
   return {
+    isHouseholdMember: vi.fn().mockResolvedValue(behavior.isMember ?? true),
     insertReceipt: vi.fn().mockResolvedValue(behavior.insertResult),
     selectByKey: vi.fn().mockResolvedValue(behavior.selectResult ?? { data: null, error: null }),
     updateReceiptResult,
@@ -139,6 +144,13 @@ describe('receipt-ocr handler', () => {
     await expect(handle(makeDeps({ idempotencyKey: null }), REQ)).rejects.toBeInstanceOf(
       MissingIdempotencyKey,
     );
+  });
+
+  it('rejects a non-member before any insert', async () => {
+    const db = makeDb({ insertResult: { data: makeRow(), error: null }, isMember: false });
+    await expect(handle(makeDeps({ db }), REQ)).rejects.toBeInstanceOf(ForbiddenHousehold);
+    expect(db.insertReceipt).not.toHaveBeenCalled();
+    expect(db.updateReceiptResult).not.toHaveBeenCalled();
   });
 
   it('marks failed when every provider in chain throws', async () => {

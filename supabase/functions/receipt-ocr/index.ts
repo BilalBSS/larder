@@ -6,7 +6,12 @@ import { Redis } from 'npm:@upstash/redis@1';
 import { makeRequestContext } from '../_shared/context.ts';
 import { makeServerLogger } from '../_shared/logger.ts';
 import { mockOcrProvider } from '../_shared/llm/mock-providers.ts';
-import { handle, MissingIdempotencyKey, type ReceiptOcrRequest } from './handler.ts';
+import {
+  ForbiddenHousehold,
+  handle,
+  MissingIdempotencyKey,
+  type ReceiptOcrRequest,
+} from './handler.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -37,6 +42,17 @@ Deno.serve(async (req) => {
       {
         ctx,
         db: {
+          async isHouseholdMember(input) {
+            const res = await supabase
+              .from('household_members')
+              .select('user_id')
+              .eq('household_id', input.household_id)
+              .eq('user_id', input.user_id)
+              .is('deleted_at', null)
+              .maybeSingle();
+            if (res.error) throw res.error;
+            return res.data !== null;
+          },
           async insertReceipt(input) {
             const res = await supabase
               .from('receipts')
@@ -98,6 +114,12 @@ Deno.serve(async (req) => {
     if (err instanceof MissingIdempotencyKey) {
       return new Response(JSON.stringify({ error: err.message }), {
         status: 400,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (err instanceof ForbiddenHousehold) {
+      return new Response(JSON.stringify({ error: err.message }), {
+        status: 403,
         headers: { 'content-type': 'application/json' },
       });
     }

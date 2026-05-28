@@ -38,6 +38,10 @@ export interface ReceiptOcrUpdate {
 }
 
 export interface ReceiptDb {
+  isHouseholdMember(input: {
+    readonly household_id: string;
+    readonly user_id: string;
+  }): Promise<boolean>;
   insertReceipt(input: {
     readonly household_id: string;
     readonly idempotency_key: string;
@@ -73,6 +77,13 @@ export class MissingIdempotencyKey extends Error {
   }
 }
 
+export class ForbiddenHousehold extends Error {
+  constructor() {
+    super('forbidden_household');
+    this.name = 'ForbiddenHousehold';
+  }
+}
+
 const DEFAULT_STALLED_AFTER_MS = 5 * 60 * 1000;
 
 export async function handle(
@@ -82,6 +93,12 @@ export async function handle(
   const { ctx } = deps;
   const idempotencyKey = ctx.idempotencyKey;
   if (idempotencyKey === null) throw new MissingIdempotencyKey();
+
+  const member = await deps.db.isHouseholdMember({
+    household_id: req.household_id,
+    user_id: ctx.user.id,
+  });
+  if (!member) throw new ForbiddenHousehold();
 
   const insertResult = await idempotentInsert<ReceiptRow>({
     insert: () =>
