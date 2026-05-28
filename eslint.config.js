@@ -51,6 +51,13 @@ module.exports = defineConfig([
     },
   },
   {
-    ignores: ['dist/*', 'node_modules/*', '.expo/*', 'tooling/**/*.sh'],
+    ignores: [
+      'dist/*',
+      'node_modules/*',
+      '.expo/*',
+      'tooling/**/*.sh',
+      'supabase/functions/*/index.ts',
+      'eslint.config.js',
+    ],
   },
 ]);

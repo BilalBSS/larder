@@ -1,0 +1,7 @@
+project_id = "larder"
+
+[db]
+major_version = 15
+
+[functions.receipt-ocr]
+verify_jwt = true
