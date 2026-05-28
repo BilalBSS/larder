@@ -41,7 +41,7 @@ module.exports = defineConfig([
               message: 'domain/services must be pure',
             },
             {
-              target: ['./app', './components'],
+              target: ['./app', './components', './src/ui'],
               from: './src/data',
               message: 'presentation must call use-cases, not repos',
             },
