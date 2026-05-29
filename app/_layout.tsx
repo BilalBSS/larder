@@ -6,8 +6,8 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import '../global.css';
 
-import { resolvePendingInvite } from '@/app/(auth)/resolve-pending-invite';
-import { resolveGate } from '@/app/resolve-gate';
+import { resolveGate } from '@/src/shell/resolve-gate';
+import { resolvePendingInvite } from '@/src/shell/resolve-pending-invite';
 import { makeLoadAuthUser } from '@domain/use-cases/auth/load-current-user';
 import { supabase } from '@foundation/auth/supabase';
 import { AppContextProvider, useAuthStatus, useUser } from '@foundation/context';
@@ -56,6 +56,7 @@ function RootNavigator({ fontsLoaded }: { readonly fontsLoaded: boolean }) {
       <Stack.Protected guard={gate !== 'tabs'}>
         <Stack.Screen name="(auth)" />
       </Stack.Protected>
+      <Stack.Screen name="join/[token]" />
     </Stack>
   );
 }

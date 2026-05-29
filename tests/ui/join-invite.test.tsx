@@ -1,9 +1,9 @@
 import { render, screen, waitFor } from '@testing-library/react-native';
 
-import JoinInvite from '@/app/(auth)/join/[token]';
+import JoinInvite from '@/app/join/[token]';
 import { inviteService } from '@domain/use-cases/invite/service';
 import { useAuthStatus } from '@foundation/context';
-import { setPendingInvite } from '@/app/(auth)/pending-invite';
+import { setPendingInvite } from '@/src/shell/pending-invite';
 
 const mockReplace = jest.fn();
 let mockParams: { token?: string } = { token: 'tok-1' };
@@ -25,7 +25,7 @@ jest.mock('@foundation/context', () => ({
   useLogger: jest.fn(() => ({ error: jest.fn(), info: jest.fn(), warn: jest.fn() })),
 }));
 
-jest.mock('@/app/(auth)/pending-invite', () => ({
+jest.mock('@/src/shell/pending-invite', () => ({
   setPendingInvite: jest.fn(async () => {}),
 }));
 

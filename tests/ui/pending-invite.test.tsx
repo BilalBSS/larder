@@ -1,10 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import {
-  clearPendingInvite,
-  getPendingInvite,
-  setPendingInvite,
-} from '@/app/(auth)/pending-invite';
+import { clearPendingInvite, getPendingInvite, setPendingInvite } from '@/src/shell/pending-invite';
 
 const KEY = 'larder.pending_invite_token';
 const setItem = AsyncStorage.setItem as jest.Mock;

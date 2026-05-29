@@ -12,7 +12,6 @@ export default function AuthLayout() {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="join/[token]" />
       <Stack.Protected guard={authed}>
         <Stack.Screen name="onboarding" />
       </Stack.Protected>

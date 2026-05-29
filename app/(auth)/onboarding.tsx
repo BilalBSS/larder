@@ -5,7 +5,7 @@ import { inviteService } from '@domain/use-cases/invite/service';
 import { useLogger, useRefreshUser } from '@foundation/context';
 import { Button, Logo, Screen, Text, TextField } from '@ui/index';
 
-import { inviteMessage } from './invite-copy';
+import { inviteMessage } from '@/src/shell/invite-copy';
 
 // / rfc-4122 token shape
 const TOKEN_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

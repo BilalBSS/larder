@@ -1,4 +1,4 @@
-import { inviteMessage } from '@/app/(auth)/invite-copy';
+import { inviteMessage } from '@/src/shell/invite-copy';
 
 describe('inviteMessage', () => {
   it('maps an expired invite', () => {

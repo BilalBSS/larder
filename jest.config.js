@@ -26,7 +26,8 @@ module.exports = {
     'src/domain/use-cases/auth/**/*.ts',
     'app/\\(auth\\)/**/*.{ts,tsx}',
     'app/\\(tabs\\)/**/*.tsx',
-    'app/resolve-gate.ts',
+    'app/join/**/*.tsx',
+    'src/shell/**/*.{ts,tsx}',
     '!**/index.ts',
   ],
   coverageThreshold: {

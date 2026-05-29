@@ -1,4 +1,4 @@
-import { resolveGate } from '@/app/resolve-gate';
+import { resolveGate } from '@/src/shell/resolve-gate';
 
 describe('resolveGate', () => {
   it('holds on the splash while auth is loading', () => {

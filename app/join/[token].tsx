@@ -6,8 +6,8 @@ import { inviteService } from '@domain/use-cases/invite/service';
 import { useAuthStatus, useLogger, useRefreshUser } from '@foundation/context';
 import { Button, FRESH, Logo, Screen, Text } from '@ui/index';
 
-import { inviteMessage } from '../invite-copy';
-import { setPendingInvite } from '../pending-invite';
+import { inviteMessage } from '@/src/shell/invite-copy';
+import { setPendingInvite } from '@/src/shell/pending-invite';
 
 type Phase = 'working' | 'error';
 
