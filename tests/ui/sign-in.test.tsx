@@ -72,4 +72,18 @@ describe('SignIn', () => {
       expect(signIn).toHaveBeenCalledWith({ email: 'a@b.com', password: 'secret1' }),
     );
   });
+
+  it('signs in only once when pressed twice', async () => {
+    let resolve: (value: { error: null }) => void = () => {};
+    signIn.mockReturnValue(new Promise((r) => (resolve = r)));
+    render(<SignIn />);
+    fireEvent.changeText(screen.getByLabelText('email'), 'a@b.com');
+    fireEvent.changeText(screen.getByLabelText('password'), 'secret1');
+    const button = screen.getByRole('button', { name: 'Sign in' });
+    fireEvent.press(button);
+    fireEvent.press(button);
+    expect(signIn).toHaveBeenCalledTimes(1);
+    resolve({ error: null });
+    await waitFor(() => expect(signIn).toHaveBeenCalledTimes(1));
+  });
 });

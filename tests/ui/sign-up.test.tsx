@@ -96,4 +96,17 @@ describe('SignUp', () => {
     expect(await screen.findByRole('button', { name: 'Create account' })).toBeOnTheScreen();
     expect(screen.queryByText('Check your email')).toBeNull();
   });
+
+  it('signs up only once when pressed twice', async () => {
+    let resolve: (value: { data: { session: null }; error: null }) => void = () => {};
+    signUp.mockReturnValue(new Promise((r) => (resolve = r)));
+    render(<SignUp />);
+    fill('new@b.com', 'secret1');
+    const button = screen.getByRole('button', { name: 'Create account' });
+    fireEvent.press(button);
+    fireEvent.press(button);
+    expect(signUp).toHaveBeenCalledTimes(1);
+    resolve({ data: { session: null }, error: null });
+    await screen.findByText('Check your email');
+  });
 });

@@ -21,7 +21,11 @@ export function TopBar({ title, eyebrow, sub, leading, trailing }: TopBarProps) 
       </View>
       <View className="mt-1">
         {eyebrow !== undefined ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-        <Text variant="display-lg" className={eyebrow !== undefined ? 'mt-1' : ''}>
+        <Text
+          variant="display-lg"
+          numberOfLines={1}
+          className={eyebrow !== undefined ? 'mt-1' : ''}
+        >
           {title}
         </Text>
         {sub !== undefined ? (

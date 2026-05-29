@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 import { inviteService } from '@domain/use-cases/invite/service';
 import { useAuthStatus, useLogger, useRefreshUser } from '@foundation/context';
@@ -8,6 +8,9 @@ import { Button, Logo, Screen, Text } from '@ui/index';
 
 import { inviteMessage } from '../invite-copy';
 import { setPendingInvite } from '../pending-invite';
+
+// / fresh green token
+const FRESH = '#4F7C45';
 
 type Phase = 'working' | 'error';
 
@@ -70,6 +73,9 @@ export default function JoinInvite() {
         <Text variant="body" tone="mid" className="mt-2">
           {message}
         </Text>
+        {phase === 'working' ? (
+          <ActivityIndicator testID="join-working" color={FRESH} className="mt-6 self-start" />
+        ) : null}
         {phase === 'error' ? (
           <View className="mt-6">
             <Button label="Back to sign in" onPress={() => router.replace('/sign-in')} full />

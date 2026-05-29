@@ -25,7 +25,7 @@ const baseClass: Record<ButtonKind, string> = {
   secondary: 'border border-edge bg-surface',
   accent: 'bg-terracotta',
   ghost: 'bg-transparent',
-  danger: 'bg-urgency-urgent',
+  danger: 'border border-urgency-urgent-bg bg-transparent',
 };
 
 const pressedClass: Record<ButtonKind, string> = {
@@ -33,7 +33,7 @@ const pressedClass: Record<ButtonKind, string> = {
   secondary: 'border border-edge-press bg-surface-mute',
   accent: 'bg-terracotta-deep',
   ghost: 'bg-surface-mute',
-  danger: 'bg-urgency-urgent-deep',
+  danger: 'border border-urgency-urgent-bg bg-urgency-urgent-bg',
 };
 
 const labelTone: Record<ButtonKind, TextTone> = {
@@ -41,7 +41,7 @@ const labelTone: Record<ButtonKind, TextTone> = {
   secondary: 'ink',
   accent: 'inverse',
   ghost: 'ink',
-  danger: 'inverse',
+  danger: 'urgent',
 };
 
 const sizeClass: Record<ButtonSize, string> = {
@@ -57,7 +57,7 @@ const iconColor: Record<ButtonKind, string> = {
   secondary: '#1C1814',
   accent: '#FFFCF4',
   ghost: '#1C1814',
-  danger: '#FFFCF4',
+  danger: '#8E2A26',
 };
 
 export function Button({

@@ -16,7 +16,7 @@ export interface AppFontsState {
 
 // / load only scale weights
 export function useAppFonts(): AppFontsState {
-  const [loaded] = useFonts({
+  const [loaded, error] = useFonts({
     Newsreader_500Medium,
     Newsreader_600SemiBold,
     Manrope_500Medium,
@@ -26,5 +26,6 @@ export function useAppFonts(): AppFontsState {
     JetBrainsMono_500Medium,
   });
 
-  return { fontsLoaded: loaded };
+  // / system fallback on error
+  return { fontsLoaded: loaded || error !== null };
 }

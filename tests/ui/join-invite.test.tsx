@@ -59,6 +59,7 @@ describe('JoinInvite', () => {
     setStatus('loading');
     render(<JoinInvite />);
     await waitFor(() => expect(screen.getByText('Joining the household…')).toBeOnTheScreen());
+    expect(screen.getByTestId('join-working')).toBeOnTheScreen();
     expect(accept).not.toHaveBeenCalled();
     expect(setPendingInvite).not.toHaveBeenCalled();
   });

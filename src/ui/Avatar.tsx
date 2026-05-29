@@ -21,7 +21,7 @@ export function Avatar({ userId, label, size = 22, ring = false }: AvatarProps) 
   return (
     <View
       accessibilityRole="image"
-      accessibilityLabel={label ?? userId}
+      accessibilityLabel={label ?? 'Household member'}
       className={`items-center justify-center rounded-pill ${ring ? 'border-2 border-surface' : ''}`}
       style={{ width: size, height: size, backgroundColor: deriveAvatarColor(userId) }}
     >

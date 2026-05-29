@@ -20,6 +20,7 @@ export type TextTone =
   | 'mid'
   | 'muted'
   | 'terracotta'
+  | 'terracotta-deep'
   | 'inverse'
   | 'urgent'
   | 'soon'
@@ -72,6 +73,7 @@ const toneClass: Record<TextTone, string> = {
   mid: 'text-mid',
   muted: 'text-muted',
   terracotta: 'text-terracotta',
+  'terracotta-deep': 'text-terracotta-deep',
   inverse: 'text-surface-2',
   urgent: 'text-urgency-urgent-deep',
   soon: 'text-urgency-soon-deep',

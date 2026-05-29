@@ -54,9 +54,9 @@ describe('YouScreen', () => {
     expect(screen.getByText('In a household')).toBeOnTheScreen();
   });
 
-  it('shows the no-household state', () => {
-    mockUseUser.mockReturnValue({ id: 'u-1', household_id: null, tier: 'free' });
+  it('exposes a sign-out control', () => {
+    mockUseUser.mockReturnValue({ id: 'u-1', household_id: 'h-1', tier: 'free' });
     render(<YouScreen />);
-    expect(screen.getByText('No household yet')).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Sign out' })).toBeOnTheScreen();
   });
 });

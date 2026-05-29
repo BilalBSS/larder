@@ -1,11 +1,14 @@
 import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 
 import { inviteService } from '@domain/use-cases/invite/service';
 import { useLogger, useRefreshUser } from '@foundation/context';
 import { Button, Logo, Screen, Text, TextField } from '@ui/index';
 
 import { inviteMessage } from './invite-copy';
+
+// / rfc-4122 token shape
+const TOKEN_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type HouseholdType = 'family' | 'couple' | 'roommates' | 'shared';
 
@@ -23,22 +26,30 @@ export default function Onboarding() {
 
   return (
     <Screen>
-      <View className="flex-1 px-6 pt-16">
-        <Logo size={40} />
-        {mode === 'create' ? (
-          <CreateHousehold
-            logger={logger}
-            refreshUser={refreshUser}
-            onJoin={() => setMode('join')}
-          />
-        ) : (
-          <JoinWithToken
-            logger={logger}
-            refreshUser={refreshUser}
-            onCreate={() => setMode('create')}
-          />
-        )}
-      </View>
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView
+          contentContainerClassName="flex-grow px-6 pt-16 pb-8"
+          keyboardShouldPersistTaps="handled"
+        >
+          <Logo size={40} />
+          {mode === 'create' ? (
+            <CreateHousehold
+              logger={logger}
+              refreshUser={refreshUser}
+              onJoin={() => setMode('join')}
+            />
+          ) : (
+            <JoinWithToken
+              logger={logger}
+              refreshUser={refreshUser}
+              onCreate={() => setMode('create')}
+            />
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Screen>
   );
 }
@@ -82,7 +93,7 @@ function CreateHousehold({
         Set up your household
       </Text>
       <Text variant="body" tone="mid" className="mt-1">
-        Name it and tell us who shares it.
+        Name it and pick who shares it.
       </Text>
 
       <View className="mt-8 gap-3">
@@ -116,7 +127,7 @@ function CreateHousehold({
       </View>
 
       {error !== null ? (
-        <Text variant="meta" tone="urgent" className="mt-3">
+        <Text variant="meta" tone="urgent" className="mt-3" accessibilityLiveRegion="polite">
           {error}
         </Text>
       ) : null}
@@ -164,10 +175,15 @@ function JoinWithToken({
       setError('Paste your invite link or code.');
       return;
     }
+    const parsed = extractToken(token);
+    if (parsed === null) {
+      setError("That doesn't look like an invite link.");
+      return;
+    }
     setError(null);
     setBusy(true);
     try {
-      await inviteService.accept(extractToken(token));
+      await inviteService.accept(parsed);
       await refreshUser();
     } catch (err: unknown) {
       logger.error('accept_invite_failed', err);
@@ -197,7 +213,7 @@ function JoinWithToken({
       </View>
 
       {error !== null ? (
-        <Text variant="meta" tone="urgent" className="mt-3">
+        <Text variant="meta" tone="urgent" className="mt-3" accessibilityLiveRegion="polite">
           {error}
         </Text>
       ) : null}
@@ -231,9 +247,10 @@ function JoinWithToken({
 }
 
 // / token from link
-function extractToken(input: string): string {
+function extractToken(input: string): string | null {
   const trimmed = input.trim();
   const marker = 'join/';
   const index = trimmed.lastIndexOf(marker);
-  return index === -1 ? trimmed : trimmed.slice(index + marker.length);
+  const candidate = index === -1 ? trimmed : trimmed.slice(index + marker.length);
+  return TOKEN_RE.test(candidate) ? candidate : null;
 }

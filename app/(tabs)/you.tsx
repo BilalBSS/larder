@@ -1,8 +1,10 @@
 // / you tab placeholder
 import { View } from 'react-native';
 
+import { supabase } from '@foundation/auth/supabase';
 import { useUser } from '@foundation/context';
 import { Avatar } from '@ui/Avatar';
+import { Button } from '@ui/Button';
 import { Card } from '@ui/Card';
 import { Screen } from '@ui/Screen';
 import { Text } from '@ui/Text';
@@ -22,7 +24,7 @@ export default function YouScreen() {
               <View>
                 <Text variant="body-strong">Signed in</Text>
                 <Text variant="meta" tone="mid">
-                  {user.household_id !== null ? 'In a household' : 'No household yet'}
+                  In a household
                 </Text>
               </View>
             </View>
@@ -36,7 +38,15 @@ export default function YouScreen() {
             Manage your household and preferences here.
           </Text>
         </View>
+        <View className="pb-4">
+          <Button label="Sign out" kind="secondary" onPress={signOut} full />
+        </View>
       </View>
     </Screen>
   );
+}
+
+// / end the session
+function signOut(): void {
+  void supabase.auth.signOut();
 }

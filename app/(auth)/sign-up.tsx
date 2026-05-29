@@ -1,6 +1,6 @@
 import { Link } from 'expo-router';
 import { useState } from 'react';
-import { View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 
 import { supabase } from '@foundation/auth/supabase';
 import { Button, Logo, Screen, Text, TextField } from '@ui/index';
@@ -42,18 +42,98 @@ export default function SignUp() {
   if (confirmSent) {
     return (
       <Screen>
-        <View className="flex-1 justify-center px-6">
+        <KeyboardAvoidingView
+          className="flex-1"
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <ScrollView
+            contentContainerClassName="flex-grow justify-center px-6"
+            keyboardShouldPersistTaps="handled"
+          >
+            <Logo size={40} />
+            <Text variant="display-lg" className="mt-6">
+              Check your email
+            </Text>
+            <Text variant="body" tone="mid" className="mt-2">
+              Larder sent a confirmation link to {email.trim()}. Open it to finish setting up your
+              account.
+            </Text>
+            <View className="mt-8 flex-row justify-center gap-1">
+              <Text variant="meta" tone="mid">
+                Already confirmed?
+              </Text>
+              <Link href="/sign-in">
+                <Text variant="meta" tone="terracotta">
+                  Sign in
+                </Text>
+              </Link>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </Screen>
+    );
+  }
+
+  return (
+    <Screen>
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView
+          contentContainerClassName="flex-grow justify-center px-6"
+          keyboardShouldPersistTaps="handled"
+        >
           <Logo size={40} />
           <Text variant="display-lg" className="mt-6">
-            Check your email
+            Create your account
           </Text>
-          <Text variant="body" tone="mid" className="mt-2">
-            We sent a confirmation link to {email.trim()}. Open it to finish setting up your
-            account.
+          <Text variant="body" tone="mid" className="mt-1">
+            Start a household or join one with an invite.
           </Text>
-          <View className="mt-8 flex-row justify-center gap-1">
+
+          <View className="mt-8 gap-3">
+            <TextField
+              value={email}
+              onChangeText={setEmail}
+              placeholder="Email"
+              autoCapitalize="none"
+              autoComplete="email"
+              keyboardType="email-address"
+              inputMode="email"
+              accessibilityLabel="email"
+            />
+            <TextField
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Password"
+              autoCapitalize="none"
+              autoComplete="new-password"
+              secureTextEntry
+              accessibilityLabel="password"
+              onSubmitEditing={() => void submit()}
+            />
+          </View>
+
+          {error !== null ? (
+            <Text variant="meta" tone="urgent" className="mt-3" accessibilityLiveRegion="polite">
+              {error}
+            </Text>
+          ) : null}
+
+          <View className="mt-6">
+            <Button
+              label={busy ? 'Creating…' : 'Create account'}
+              onPress={() => void submit()}
+              disabled={busy}
+              full
+              size="lg"
+            />
+          </View>
+
+          <View className="mt-6 flex-row justify-center gap-1">
             <Text variant="meta" tone="mid">
-              Already confirmed?
+              Already have an account?
             </Text>
             <Link href="/sign-in">
               <Text variant="meta" tone="terracotta">
@@ -61,72 +141,8 @@ export default function SignUp() {
               </Text>
             </Link>
           </View>
-        </View>
-      </Screen>
-    );
-  }
-
-  return (
-    <Screen>
-      <View className="flex-1 justify-center px-6">
-        <Logo size={40} />
-        <Text variant="display-lg" className="mt-6">
-          Create your account
-        </Text>
-        <Text variant="body" tone="mid" className="mt-1">
-          Start a household or join one with an invite.
-        </Text>
-
-        <View className="mt-8 gap-3">
-          <TextField
-            value={email}
-            onChangeText={setEmail}
-            placeholder="Email"
-            autoCapitalize="none"
-            autoComplete="email"
-            keyboardType="email-address"
-            inputMode="email"
-            accessibilityLabel="email"
-          />
-          <TextField
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Password"
-            autoCapitalize="none"
-            autoComplete="new-password"
-            secureTextEntry
-            accessibilityLabel="password"
-            onSubmitEditing={() => void submit()}
-          />
-        </View>
-
-        {error !== null ? (
-          <Text variant="meta" tone="urgent" className="mt-3">
-            {error}
-          </Text>
-        ) : null}
-
-        <View className="mt-6">
-          <Button
-            label={busy ? 'Creating…' : 'Create account'}
-            onPress={() => void submit()}
-            disabled={busy}
-            full
-            size="lg"
-          />
-        </View>
-
-        <View className="mt-6 flex-row justify-center gap-1">
-          <Text variant="meta" tone="mid">
-            Already have an account?
-          </Text>
-          <Link href="/sign-in">
-            <Text variant="meta" tone="terracotta">
-              Sign in
-            </Text>
-          </Link>
-        </View>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Screen>
   );
 }

@@ -16,7 +16,7 @@ export function Checkbox({ checked, onPress, accessibilityLabel }: CheckboxProps
       accessibilityRole="checkbox"
       accessibilityState={{ checked }}
       accessibilityLabel={accessibilityLabel}
-      hitSlop={8}
+      hitSlop={11}
     >
       <View
         className={`h-[22px] w-[22px] items-center justify-center rounded-2 border ${

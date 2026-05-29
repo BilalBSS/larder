@@ -1,6 +1,6 @@
 // / shopping list row
-import { ChevronRight, Sparkle } from 'lucide-react-native';
-import { Pressable, View } from 'react-native';
+import { Sparkle } from 'lucide-react-native';
+import { Alert, Pressable, View } from 'react-native';
 
 import { ownerLabel, type ShoppingListItem } from '@domain/entities/shopping-list-item';
 import { Avatar } from '@ui/Avatar';
@@ -8,8 +8,6 @@ import { Checkbox } from '@ui/Checkbox';
 import { Icon } from '@ui/Icon';
 import { Text } from '@ui/Text';
 
-// / muted chevron token
-const MUTED = '#9A8F82';
 // / terracotta accent token
 const TERRACOTTA = '#B5532D';
 
@@ -17,7 +15,7 @@ export interface ShopRowProps {
   readonly item: ShoppingListItem;
   readonly currentUserId: string;
   readonly onToggle: (item: ShoppingListItem) => void;
-  readonly onOpen?: (item: ShoppingListItem) => void;
+  readonly onRemove?: (item: ShoppingListItem) => void;
   readonly last?: boolean;
   readonly smart?: boolean;
 }
@@ -26,7 +24,7 @@ export function ShopRow({
   item,
   currentUserId,
   onToggle,
-  onOpen,
+  onRemove,
   last = false,
   smart = false,
 }: ShopRowProps) {
@@ -34,9 +32,18 @@ export function ShopRow({
   const owned = ownerLabel(item, currentUserId) === 'mine';
   const checked = item.isCheckedOff;
   const ownerId = item.ownerUserId ?? item.addedByUserId;
+
+  function confirmRemove(): void {
+    if (onRemove === undefined) return;
+    Alert.alert(`Remove ${item.displayName}?`, undefined, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: () => onRemove(item) },
+    ]);
+  }
+
   return (
     <Pressable
-      onPress={onOpen !== undefined ? () => onOpen(item) : undefined}
+      onLongPress={onRemove !== undefined ? confirmRemove : undefined}
       className={`flex-row items-center gap-3 px-3 py-3 ${last ? '' : 'border-b border-hairline'}`}
     >
       <Checkbox
@@ -65,7 +72,7 @@ export function ShopRow({
               </Text>
               <View className="flex-row items-center gap-[3px]">
                 <Icon icon={Sparkle} accessibilityLabel="" size={10} color={TERRACOTTA} />
-                <Text variant="meta" tone="terracotta">
+                <Text variant="meta" tone="terracotta-deep">
                   smart re-order
                 </Text>
               </View>
@@ -84,7 +91,6 @@ export function ShopRow({
         </View>
       </View>
       <Avatar userId={ownerId} size={20} />
-      <Icon icon={ChevronRight} accessibilityLabel="" size={14} color={MUTED} />
     </Pressable>
   );
 }

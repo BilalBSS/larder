@@ -25,7 +25,7 @@ export default function ShoppingScreen() {
   const user = useUser();
   const householdId = user?.household_id ?? null;
   const currentUserId = user?.id ?? '';
-  const { items, loading, error, add, toggle, reload } = useShoppingList({
+  const { items, loading, error, add, toggle, remove, reload } = useShoppingList({
     householdId,
     userId: currentUserId,
   });
@@ -44,15 +44,17 @@ export default function ShoppingScreen() {
   }
 
   const sections = groupByCategory(items);
+  const isEmpty = items.length === 0;
   const remaining = items.filter((item) => !item.isCheckedOff).length;
   const contributors = new Set(items.map((item) => item.ownerUserId ?? item.addedByUserId)).size;
+  const peopleLabel = contributors === 1 ? '1 person' : `${contributors} people`;
 
   return (
     <Screen>
       <TopBar
         title="Shopping"
-        eyebrow={`Live · ${contributors} on this list`}
-        sub={`${remaining} of ${items.length} to grab`}
+        eyebrow={isEmpty ? 'Live' : `Live · ${peopleLabel}`}
+        {...(isEmpty ? {} : { sub: `${remaining} of ${items.length} to grab` })}
         trailing={
           <>
             <Pill>
@@ -71,9 +73,10 @@ export default function ShoppingScreen() {
           </>
         }
       />
+      {/* / scrollview ok under 80 */}
       <ScrollView contentContainerClassName="gap-3 px-4 pb-10">
         <QuickAddBar onAdd={add} />
-        <SmartReorderBanner />
+        {!isEmpty ? <SmartReorderBanner /> : null}
         {error !== null ? (
           <View className="flex-row items-center justify-between">
             <Text variant="meta" tone="urgent">
@@ -111,6 +114,7 @@ export default function ShoppingScreen() {
                     item={item}
                     currentUserId={currentUserId}
                     onToggle={toggle}
+                    onRemove={remove}
                     last={itemIndex === section.items.length - 1}
                   />
                 ))}
