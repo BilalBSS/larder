@@ -30,7 +30,6 @@ describe('ShopRow', () => {
         item={makeItem({ quantity: 2, unit: 'L' })}
         currentUserId="u-1"
         onToggle={jest.fn()}
-        onRemove={jest.fn()}
       />,
     );
     expect(screen.getByText('Milk')).toBeOnTheScreen();
@@ -40,40 +39,36 @@ describe('ShopRow', () => {
   it('fires onToggle from the checkbox', () => {
     const onToggle = jest.fn();
     const item = makeItem();
-    render(<ShopRow item={item} currentUserId="u-1" onToggle={onToggle} onRemove={jest.fn()} />);
+    render(<ShopRow item={item} currentUserId="u-1" onToggle={onToggle} />);
     fireEvent.press(screen.getByLabelText('toggle Milk'));
     expect(onToggle).toHaveBeenCalledWith(item);
   });
 
-  it('fires onRemove from the remove button', () => {
-    const onRemove = jest.fn();
-    const item = makeItem();
-    render(<ShopRow item={item} currentUserId="u-1" onToggle={jest.fn()} onRemove={onRemove} />);
-    fireEvent.press(screen.getByLabelText('remove Milk'));
-    expect(onRemove).toHaveBeenCalledWith(item);
+  it('strikes through a checked item in place', () => {
+    render(
+      <ShopRow item={makeItem({ isCheckedOff: true })} currentUserId="u-1" onToggle={jest.fn()} />,
+    );
+    const className = String(screen.getByText('Milk').props.className);
+    expect(className).toContain('line-through');
+    expect(className).toContain('text-muted');
   });
 
-  it('shows household ownership for another user', () => {
+  it('marks an item owned by the current user', () => {
     render(
-      <ShopRow
-        item={makeItem({ ownerUserId: 'u-2' })}
-        currentUserId="u-1"
-        onToggle={jest.fn()}
-        onRemove={jest.fn()}
-      />,
+      <ShopRow item={makeItem({ ownerUserId: 'u-1' })} currentUserId="u-1" onToggle={jest.fn()} />,
     );
-    expect(screen.getByText('Household')).toBeOnTheScreen();
+    expect(screen.getByText('mine')).toBeOnTheScreen();
   });
 
-  it('shows mine for the current user', () => {
+  it('omits the mine label for another owner', () => {
     render(
-      <ShopRow
-        item={makeItem({ ownerUserId: 'u-1' })}
-        currentUserId="u-1"
-        onToggle={jest.fn()}
-        onRemove={jest.fn()}
-      />,
+      <ShopRow item={makeItem({ ownerUserId: 'u-2' })} currentUserId="u-1" onToggle={jest.fn()} />,
     );
-    expect(screen.getByText('Mine')).toBeOnTheScreen();
+    expect(screen.queryByText('mine')).toBeNull();
+  });
+
+  it('shows the smart re-order tag when flagged', () => {
+    render(<ShopRow item={makeItem()} currentUserId="u-1" onToggle={jest.fn()} smart />);
+    expect(screen.getByText('smart re-order')).toBeOnTheScreen();
   });
 });

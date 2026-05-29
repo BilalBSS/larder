@@ -9,7 +9,7 @@ export function rlsConfigured(): boolean {
   return ANON !== '' && SERVICE !== '';
 }
 
-function adminClient(): SupabaseClient {
+export function adminClient(): SupabaseClient {
   if (!rlsConfigured()) throw new Error('rls env unset');
   return createClient(URL, SERVICE, { auth: { persistSession: false } });
 }
@@ -27,6 +27,16 @@ export interface RlsActor {
   readonly user_id: string;
   readonly jwt: string;
   readonly household_id: string;
+}
+
+export interface BareActor {
+  readonly email: string;
+  readonly user_id: string;
+  readonly jwt: string;
+}
+
+export interface BareActorHandle extends BareActor {
+  teardown(): Promise<void>;
 }
 
 export interface RlsFixture {
@@ -91,6 +101,20 @@ async function seedHousehold(
     updated_by_user_id: user_id,
   });
   return household.data.id;
+}
+
+// / bare authed user
+export async function makeBareActor(): Promise<BareActorHandle> {
+  const admin = adminClient();
+  const user = await makeUser(admin);
+  return {
+    email: user.email,
+    user_id: user.user_id,
+    jwt: user.jwt,
+    async teardown() {
+      await admin.auth.admin.deleteUser(user.user_id);
+    },
+  };
 }
 
 export async function setupFixture(): Promise<RlsFixture> {

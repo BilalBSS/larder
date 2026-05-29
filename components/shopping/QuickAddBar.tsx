@@ -1,16 +1,15 @@
 // / quick add bar
 import { useState } from 'react';
-import { View } from 'react-native';
 
-import { Button } from '@ui/Button';
-import { TextField } from '@ui/TextField';
+import { QuickAdd } from '@ui/QuickAdd';
 
 export interface QuickAddBarProps {
   readonly onAdd: (name: string) => void;
+  readonly onScan?: () => void;
   readonly disabled?: boolean;
 }
 
-export function QuickAddBar({ onAdd, disabled = false }: QuickAddBarProps) {
+export function QuickAddBar({ onAdd, onScan, disabled = false }: QuickAddBarProps) {
   const [text, setText] = useState('');
 
   const submit = () => {
@@ -21,19 +20,14 @@ export function QuickAddBar({ onAdd, disabled = false }: QuickAddBarProps) {
   };
 
   return (
-    <View className="flex-row items-center gap-2 px-4 py-3">
-      <View className="flex-1">
-        <TextField
-          value={text}
-          onChangeText={setText}
-          placeholder="Add an item"
-          returnKeyType="done"
-          onSubmitEditing={submit}
-          editable={!disabled}
-          accessibilityLabel="new item name"
-        />
-      </View>
-      <Button label="Add" onPress={submit} disabled={disabled} />
-    </View>
+    <QuickAdd
+      value={text}
+      onChangeText={setText}
+      onSubmit={submit}
+      onScan={onScan}
+      placeholder="Add an item"
+      inputAccessibilityLabel="new item name"
+      editable={!disabled}
+    />
   );
 }
