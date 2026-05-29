@@ -78,4 +78,19 @@ describe('JoinInvite', () => {
     render(<JoinInvite />);
     expect(await screen.findByText('This invite has already been used.')).toBeOnTheScreen();
   });
+
+  it('reports a missing code when the token is absent', async () => {
+    setStatus('authed');
+    mockParams = {};
+    render(<JoinInvite />);
+    expect(await screen.findByText('That invite link is missing its code.')).toBeOnTheScreen();
+    expect(accept).not.toHaveBeenCalled();
+  });
+
+  it('still routes to sign-in when stashing the token fails', async () => {
+    setStatus('anon');
+    (setPendingInvite as jest.Mock).mockRejectedValue(new Error('disk full'));
+    render(<JoinInvite />);
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/sign-in'));
+  });
 });

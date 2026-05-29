@@ -23,7 +23,10 @@ module.exports = {
     'src/ui/**/*.{ts,tsx}',
     'components/shopping/**/*.{ts,tsx}',
     'src/foundation/context.tsx',
-    'app/**/shopping.tsx',
+    'src/domain/use-cases/auth/**/*.ts',
+    'app/\\(auth\\)/**/*.{ts,tsx}',
+    'app/\\(tabs\\)/**/*.tsx',
+    'app/resolve-gate.ts',
     '!**/index.ts',
   ],
   coverageThreshold: {

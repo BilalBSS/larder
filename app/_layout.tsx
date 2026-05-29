@@ -7,6 +7,7 @@ import 'react-native-reanimated';
 import '../global.css';
 
 import { resolvePendingInvite } from '@/app/(auth)/resolve-pending-invite';
+import { resolveGate } from '@/app/resolve-gate';
 import { makeLoadAuthUser } from '@domain/use-cases/auth/load-current-user';
 import { supabase } from '@foundation/auth/supabase';
 import { AppContextProvider, useAuthStatus, useUser } from '@foundation/context';
@@ -34,7 +35,8 @@ export default function RootLayout() {
 function RootNavigator({ fontsLoaded }: { readonly fontsLoaded: boolean }) {
   const authStatus = useAuthStatus();
   const user = useUser();
-  const ready = fontsLoaded && authStatus !== 'loading';
+  const gate = resolveGate(authStatus, user?.household_id != null);
+  const ready = fontsLoaded && gate !== 'loading';
 
   useEffect(() => {
     if (ready) {
@@ -46,14 +48,12 @@ function RootNavigator({ fontsLoaded }: { readonly fontsLoaded: boolean }) {
     return null;
   }
 
-  const inHousehold = authStatus === 'authed' && user?.household_id != null;
-
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={inHousehold}>
+      <Stack.Protected guard={gate === 'tabs'}>
         <Stack.Screen name="(tabs)" />
       </Stack.Protected>
-      <Stack.Protected guard={!inHousehold}>
+      <Stack.Protected guard={gate !== 'tabs'}>
         <Stack.Screen name="(auth)" />
       </Stack.Protected>
     </Stack>

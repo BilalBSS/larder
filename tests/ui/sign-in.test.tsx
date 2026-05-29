@@ -44,6 +44,24 @@ describe('SignIn', () => {
     expect(await screen.findByText('Connection problem. Try again.')).toBeOnTheScreen();
   });
 
+  it('asks the user to confirm their email first', async () => {
+    signIn.mockResolvedValue({ error: { message: 'Email not confirmed' } });
+    render(<SignIn />);
+    fireEvent.changeText(screen.getByLabelText('email'), 'a@b.com');
+    fireEvent.changeText(screen.getByLabelText('password'), 'secret1');
+    fireEvent.press(screen.getByRole('button', { name: 'Sign in' }));
+    expect(await screen.findByText('Confirm your email first, then sign in.')).toBeOnTheScreen();
+  });
+
+  it('falls back for an unexpected sign-in error', async () => {
+    signIn.mockResolvedValue({ error: { message: 'teapot' } });
+    render(<SignIn />);
+    fireEvent.changeText(screen.getByLabelText('email'), 'a@b.com');
+    fireEvent.changeText(screen.getByLabelText('password'), 'secret1');
+    fireEvent.press(screen.getByRole('button', { name: 'Sign in' }));
+    expect(await screen.findByText('Could not sign in. Try again.')).toBeOnTheScreen();
+  });
+
   it('calls supabase with trimmed credentials on success', async () => {
     signIn.mockResolvedValue({ error: null });
     render(<SignIn />);

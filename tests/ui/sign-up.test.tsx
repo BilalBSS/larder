@@ -24,12 +24,46 @@ function fill(email: string, password: string) {
 }
 
 describe('SignUp', () => {
+  it('requires an email and password before calling supabase', () => {
+    render(<SignUp />);
+    fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
+    expect(screen.getByText('Enter your email and password.')).toBeOnTheScreen();
+    expect(signUp).not.toHaveBeenCalled();
+  });
+
   it('rejects a short password before calling supabase', () => {
     render(<SignUp />);
     fill('a@b.com', '123');
     fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
     expect(screen.getByText('Use at least 6 characters.')).toBeOnTheScreen();
     expect(signUp).not.toHaveBeenCalled();
+  });
+
+  it('maps a network failure', async () => {
+    signUp.mockResolvedValue({ data: { session: null }, error: { message: 'Network error' } });
+    render(<SignUp />);
+    fill('a@b.com', 'secret1');
+    fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
+    expect(await screen.findByText('Connection problem. Try again.')).toBeOnTheScreen();
+  });
+
+  it('maps a weak-password rejection from supabase', async () => {
+    signUp.mockResolvedValue({
+      data: { session: null },
+      error: { message: 'Password should be stronger' },
+    });
+    render(<SignUp />);
+    fill('a@b.com', 'secret1');
+    fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
+    expect(await screen.findByText('Use at least 6 characters.')).toBeOnTheScreen();
+  });
+
+  it('falls back for an unexpected sign-up error', async () => {
+    signUp.mockResolvedValue({ data: { session: null }, error: { message: 'teapot' } });
+    render(<SignUp />);
+    fill('a@b.com', 'secret1');
+    fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
+    expect(await screen.findByText('Could not create your account. Try again.')).toBeOnTheScreen();
   });
 
   it('shows the check-email state when no session is returned', async () => {
