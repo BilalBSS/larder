@@ -13,7 +13,6 @@ export interface ShoppingListItem {
   isCheckedOff: boolean;
   checkedOffAt: string | null;
   checkedOffByUserId: string | null;
-  version: number;
   createdAt: string;
 }
 

@@ -39,7 +39,6 @@ export function rowToEntity(row: ShoppingListItemRow): ShoppingListItem {
     isCheckedOff: row.is_checked_off,
     checkedOffAt: row.checked_off_at,
     checkedOffByUserId: row.checked_off_by_user_id,
-    version: row.version,
     createdAt: row.created_at,
   };
 }

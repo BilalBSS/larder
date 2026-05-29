@@ -18,7 +18,6 @@ function makeItem(overrides: Partial<ShoppingListItem> = {}): ShoppingListItem {
     isCheckedOff: false,
     checkedOffAt: null,
     checkedOffByUserId: null,
-    version: 1,
     createdAt: '2026-05-28T00:00:00Z',
     ...overrides,
   };

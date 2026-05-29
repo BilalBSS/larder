@@ -1,6 +1,6 @@
 // / shopping list screen
 import { FlashList } from '@shopify/flash-list';
-import { View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 import { QuickAddBar } from '@/components/shopping/QuickAddBar';
 import { ShopRow } from '@/components/shopping/ShopRow';
@@ -19,7 +19,7 @@ export default function ShoppingScreen() {
   const user = useUser();
   const householdId = user?.household_id ?? null;
   const currentUserId = user?.id ?? '';
-  const { toBuy, gotIt, error, add, toggle, remove, reload } = useShoppingList({
+  const { toBuy, gotIt, loading, error, add, toggle, remove, reload } = useShoppingList({
     householdId,
     userId: currentUserId,
   });
@@ -66,11 +66,17 @@ export default function ShoppingScreen() {
           )
         }
         ListEmptyComponent={
-          <View className="items-center px-8 py-16">
-            <Text variant="body" tone="muted" className="text-center">
-              Your list is empty. Add something above.
-            </Text>
-          </View>
+          loading ? (
+            <View className="items-center px-8 py-16">
+              <ActivityIndicator testID="shopping-loading" color="#C8663F" />
+            </View>
+          ) : (
+            <View className="items-center px-8 py-16">
+              <Text variant="body" tone="muted" className="text-center">
+                Your list is empty. Add something above.
+              </Text>
+            </View>
+          )
         }
       />
     </Screen>

@@ -26,7 +26,6 @@ function item(overrides: Partial<ShoppingListItem> = {}): ShoppingListItem {
     isCheckedOff: false,
     checkedOffAt: null,
     checkedOffByUserId: null,
-    version: 1,
     createdAt: '2026-05-28T00:00:00Z',
     ...overrides,
   };
@@ -63,6 +62,14 @@ describe('ShoppingScreen', () => {
     mockUseShoppingList.mockReturnValue(hookReturn());
     render(<ShoppingScreen />);
     expect(screen.getByText(/Your list is empty/)).toBeOnTheScreen();
+  });
+
+  it('shows a loading indicator during the initial load', () => {
+    mockUseUser.mockReturnValue({ id: 'u-1', household_id: 'h-1', tier: 'free' });
+    mockUseShoppingList.mockReturnValue(hookReturn({ loading: true }));
+    render(<ShoppingScreen />);
+    expect(screen.getByTestId('shopping-loading')).toBeOnTheScreen();
+    expect(screen.queryByText(/Your list is empty/)).toBeNull();
   });
 
   it('renders both sections', () => {

@@ -23,7 +23,6 @@ function item(overrides: Partial<ShoppingListItem> = {}): ShoppingListItem {
     isCheckedOff: false,
     checkedOffAt: null,
     checkedOffByUserId: null,
-    version: 1,
     createdAt: '2026-05-28T00:00:00Z',
     ...overrides,
   };
@@ -157,5 +156,18 @@ describe('useShoppingList', () => {
       userId: 'u-1',
       checked: true,
     });
+  });
+
+  it('surfaces a mutation failure as an error', async () => {
+    const { deps, service } = makeDeps();
+    (service.add as jest.Mock).mockRejectedValueOnce(new Error('insert failed'));
+    const { result } = renderHook(() =>
+      useShoppingList({ householdId: 'h-1', userId: 'u-1' }, deps),
+    );
+    await waitFor(() => expect(service.list).toHaveBeenCalledTimes(1));
+    await act(async () => {
+      await result.current.add('eggs');
+    });
+    expect(result.current.error).toEqual(new Error('insert failed'));
   });
 });

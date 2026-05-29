@@ -22,7 +22,7 @@ export function makeHouseholdRepository(deps: HouseholdRepositoryDeps): Househol
     async activeHousehold(userId) {
       const { data, error } = await deps.supabase
         .from('household_members')
-        .select('household_id, role, joined_at')
+        .select('household_id, role')
         .eq('user_id', userId)
         .is('deleted_at', null)
         .order('joined_at', { ascending: true });

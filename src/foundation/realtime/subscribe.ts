@@ -1,4 +1,5 @@
 // / generic table subscription
+import { REALTIME_SUBSCRIBE_STATES } from '@supabase/supabase-js';
 import type {
   RealtimeChannel,
   RealtimePostgresChangesPayload,
@@ -20,7 +21,14 @@ export function subscribeToTable(options: SubscribeToTableOptions): () => void {
       { event: '*', schema: 'public', table: options.table, filter: options.filter },
       options.onChange,
     )
-    .subscribe();
+    .subscribe((status) => {
+      if (
+        status === REALTIME_SUBSCRIBE_STATES.CHANNEL_ERROR ||
+        status === REALTIME_SUBSCRIBE_STATES.TIMED_OUT
+      ) {
+        console.warn(`realtime ${options.table} ${status}`);
+      }
+    });
   return () => {
     void options.supabase.removeChannel(channel);
   };

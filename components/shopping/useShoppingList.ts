@@ -113,31 +113,46 @@ export function useShoppingList(
     }, [householdId, refetch, subscribe, realtime]),
   );
 
-  const add = useCallback(
-    async (name: string) => {
-      if (householdId === null) return;
-      await service.add({ householdId, displayName: name, addedByUserId: userId });
-      await refetch();
+  const runMutation = useCallback(
+    async (action: () => Promise<void>) => {
+      try {
+        await action();
+        await refetch();
+      } catch (caught) {
+        if (mountedRef.current) {
+          setError(caught instanceof Error ? caught : new Error(String(caught)));
+        }
+      }
     },
-    [householdId, userId, service, refetch],
+    [refetch],
+  );
+
+  const add = useCallback(
+    (name: string): Promise<void> => {
+      if (householdId === null) return Promise.resolve();
+      return runMutation(() =>
+        service.add({ householdId, displayName: name, addedByUserId: userId }),
+      );
+    },
+    [householdId, userId, service, runMutation],
   );
 
   const toggle = useCallback(
-    async (item: ShoppingListItem) => {
-      if (householdId === null) return;
-      await service.checkOff({ id: item.id, householdId, userId, checked: !item.isCheckedOff });
-      await refetch();
+    (item: ShoppingListItem): Promise<void> => {
+      if (householdId === null) return Promise.resolve();
+      return runMutation(() =>
+        service.checkOff({ id: item.id, householdId, userId, checked: !item.isCheckedOff }),
+      );
     },
-    [householdId, userId, service, refetch],
+    [householdId, userId, service, runMutation],
   );
 
   const remove = useCallback(
-    async (item: ShoppingListItem) => {
-      if (householdId === null) return;
-      await service.remove({ id: item.id, householdId });
-      await refetch();
+    (item: ShoppingListItem): Promise<void> => {
+      if (householdId === null) return Promise.resolve();
+      return runMutation(() => service.remove({ id: item.id, householdId }));
     },
-    [householdId, service, refetch],
+    [householdId, service, runMutation],
   );
 
   return {
