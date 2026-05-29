@@ -4,6 +4,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
+import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import '../global.css';
 
 import { resolveGate } from '@/src/shell/resolve-gate';
@@ -23,12 +24,14 @@ export default function RootLayout() {
   const { fontsLoaded } = useAppFonts();
 
   return (
-    <AppContextProvider loadAuthUser={loadAuthUser} resolvePendingInvite={resolvePendingInvite}>
-      <ThemeProvider value={DefaultTheme}>
-        <RootNavigator fontsLoaded={fontsLoaded} />
-        <StatusBar style="auto" />
-      </ThemeProvider>
-    </AppContextProvider>
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <AppContextProvider loadAuthUser={loadAuthUser} resolvePendingInvite={resolvePendingInvite}>
+        <ThemeProvider value={DefaultTheme}>
+          <RootNavigator fontsLoaded={fontsLoaded} />
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      </AppContextProvider>
+    </SafeAreaProvider>
   );
 }
 
