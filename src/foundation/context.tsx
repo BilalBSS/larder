@@ -16,13 +16,20 @@ export interface AuthUser {
   readonly tier: Tier;
 }
 
+export type AuthStatus = 'loading' | 'authed' | 'anon';
+
 export type LoadAuthUser = (userId: string) => Promise<AuthUser>;
+
+// / accept any pending invite
+export type ResolvePendingInvite = (userId: string) => Promise<void>;
 
 export interface AppContextValue {
   readonly supabase: SupabaseClient;
   readonly logger: Logger;
   readonly posthog: PosthogClient | null;
   readonly user: AuthUser | null;
+  readonly authStatus: AuthStatus;
+  readonly refreshUser: () => Promise<void>;
   readonly entitlements: Entitlements;
   readonly llmRouter: ClientLlmRouter;
 }
@@ -32,11 +39,19 @@ const Ctx = createContext<AppContextValue | null>(null);
 export interface AppContextProviderProps {
   readonly children: React.ReactNode;
   readonly loadAuthUser: LoadAuthUser;
+  readonly resolvePendingInvite?: ResolvePendingInvite;
 }
 
-export function AppContextProvider({ children, loadAuthUser }: AppContextProviderProps) {
+export function AppContextProvider({
+  children,
+  loadAuthUser,
+  resolvePendingInvite,
+}: AppContextProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [authStatus, setAuthStatus] = useState<AuthStatus>('loading');
   const loadRef = useRef<LoadAuthUser>(loadAuthUser);
+  const resolveInviteRef = useRef<ResolvePendingInvite | undefined>(resolvePendingInvite);
+  const userIdRef = useRef<string | null>(null);
 
   const [posthog] = useState<PosthogClient | null>(() => initPosthog());
   const logger = useMemo<Logger>(() => makeLogger({ console, onError: captureException }), []);
@@ -44,6 +59,25 @@ export function AppContextProvider({ children, loadAuthUser }: AppContextProvide
   useEffect(() => {
     loadRef.current = loadAuthUser;
   }, [loadAuthUser]);
+
+  useEffect(() => {
+    resolveInviteRef.current = resolvePendingInvite;
+  }, [resolvePendingInvite]);
+
+  // / reload, keep on failure
+  const refreshUser = useMemo<() => Promise<void>>(
+    () => async () => {
+      const userId = userIdRef.current;
+      if (userId === null) return;
+      try {
+        const loaded = await loadRef.current(userId);
+        if (userIdRef.current === userId) setUser(loaded);
+      } catch (error: unknown) {
+        logger.error('refresh_auth_user_failed', error);
+      }
+    },
+    [logger],
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -55,32 +89,57 @@ export function AppContextProvider({ children, loadAuthUser }: AppContextProvide
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (session === null || event === 'SIGNED_OUT') {
         loadedUserId = null;
-        if (mounted) setUser(null);
+        userIdRef.current = null;
+        if (mounted) {
+          setUser(null);
+          setAuthStatus('anon');
+        }
         return;
       }
       const userId = session.user.id;
       if (userId === loadedUserId) return;
       loadedUserId = userId;
+      userIdRef.current = userId;
       loadRef.current(userId).then(
         (loaded) => {
-          if (mounted && loadedUserId === userId) setUser(loaded);
+          if (!mounted || loadedUserId !== userId) return;
+          setUser(loaded);
+          setAuthStatus('authed');
+          void acceptPending(userId);
         },
         (error: unknown) => {
           if (loadedUserId === userId) {
             loadedUserId = null;
-            if (mounted) setUser(null);
+            userIdRef.current = null;
+            if (mounted) {
+              setUser(null);
+              setAuthStatus('anon');
+            }
           }
           logger.error('load_auth_user_failed', error);
         },
       );
     });
 
+    // / resolve invite then refresh
+    async function acceptPending(userId: string): Promise<void> {
+      const resolve = resolveInviteRef.current;
+      if (resolve === undefined) return;
+      try {
+        await resolve(userId);
+      } catch (error: unknown) {
+        logger.error('pending_invite_failed', error);
+        return;
+      }
+      if (mounted && loadedUserId === userId) await refreshUser();
+    }
+
     return () => {
       mounted = false;
       subscription.unsubscribe();
       stopSessionRefresh();
     };
-  }, [logger]);
+  }, [logger, refreshUser]);
 
   const tier: Tier = user?.tier ?? 'free';
   const entitlements = ENTITLEMENTS[tier];
@@ -90,8 +149,17 @@ export function AppContextProvider({ children, loadAuthUser }: AppContextProvide
   );
 
   const value = useMemo<AppContextValue>(
-    () => ({ supabase, logger, posthog, user, entitlements, llmRouter }),
-    [logger, posthog, user, entitlements, llmRouter],
+    () => ({
+      supabase,
+      logger,
+      posthog,
+      user,
+      authStatus,
+      refreshUser,
+      entitlements,
+      llmRouter,
+    }),
+    [logger, posthog, user, authStatus, refreshUser, entitlements, llmRouter],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
@@ -105,6 +173,14 @@ export function useAppContext(): AppContextValue {
 
 export function useUser(): AuthUser | null {
   return useAppContext().user;
+}
+
+export function useAuthStatus(): AuthStatus {
+  return useAppContext().authStatus;
+}
+
+export function useRefreshUser(): () => Promise<void> {
+  return useAppContext().refreshUser;
 }
 
 export function useEntitlements(): Entitlements {

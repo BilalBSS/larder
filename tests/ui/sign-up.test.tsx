@@ -1,0 +1,65 @@
+import { fireEvent, render, screen } from '@testing-library/react-native';
+
+import SignUp from '@/app/(auth)/sign-up';
+import { supabase } from '@foundation/auth/supabase';
+
+jest.mock('expo-router', () => {
+  const { Text } = jest.requireActual('react-native');
+  return { Link: ({ children }: { children: React.ReactNode }) => <Text>{children}</Text> };
+});
+
+jest.mock('@foundation/auth/supabase', () => ({
+  supabase: { auth: { signUp: jest.fn() } },
+}));
+
+const signUp = supabase.auth.signUp as jest.Mock;
+
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
+function fill(email: string, password: string) {
+  fireEvent.changeText(screen.getByLabelText('email'), email);
+  fireEvent.changeText(screen.getByLabelText('password'), password);
+}
+
+describe('SignUp', () => {
+  it('rejects a short password before calling supabase', () => {
+    render(<SignUp />);
+    fill('a@b.com', '123');
+    fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
+    expect(screen.getByText('Use at least 6 characters.')).toBeOnTheScreen();
+    expect(signUp).not.toHaveBeenCalled();
+  });
+
+  it('shows the check-email state when no session is returned', async () => {
+    signUp.mockResolvedValue({ data: { session: null }, error: null });
+    render(<SignUp />);
+    fill('new@b.com', 'secret1');
+    fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
+    expect(await screen.findByText('Check your email')).toBeOnTheScreen();
+    expect(screen.getByText(/new@b.com/)).toBeOnTheScreen();
+  });
+
+  it('reports an already-registered email', async () => {
+    signUp.mockResolvedValue({
+      data: { session: null },
+      error: { message: 'User already registered' },
+    });
+    render(<SignUp />);
+    fill('taken@b.com', 'secret1');
+    fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
+    expect(
+      await screen.findByText('That email is already registered. Try signing in.'),
+    ).toBeOnTheScreen();
+  });
+
+  it('stays on the form when a session is returned', async () => {
+    signUp.mockResolvedValue({ data: { session: { user: { id: 'u-1' } } }, error: null });
+    render(<SignUp />);
+    fill('new@b.com', 'secret1');
+    fireEvent.press(screen.getByRole('button', { name: 'Create account' }));
+    expect(await screen.findByRole('button', { name: 'Create account' })).toBeOnTheScreen();
+    expect(screen.queryByText('Check your email')).toBeNull();
+  });
+});

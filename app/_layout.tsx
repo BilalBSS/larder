@@ -1,4 +1,4 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -6,10 +6,10 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import '../global.css';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { resolvePendingInvite } from '@/app/(auth)/resolve-pending-invite';
 import { makeLoadAuthUser } from '@domain/use-cases/auth/load-current-user';
 import { supabase } from '@foundation/auth/supabase';
-import { AppContextProvider } from '@foundation/context';
+import { AppContextProvider, useAuthStatus, useUser } from '@foundation/context';
 import { initSentry } from '@foundation/monitoring/sentry';
 import { useAppFonts } from '@ui/useAppFonts';
 
@@ -18,16 +18,23 @@ void SplashScreen.preventAutoHideAsync();
 
 const loadAuthUser = makeLoadAuthUser(supabase);
 
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
-
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   const { fontsLoaded } = useAppFonts();
 
-  // / readiness seam
-  const ready = fontsLoaded;
+  return (
+    <AppContextProvider loadAuthUser={loadAuthUser} resolvePendingInvite={resolvePendingInvite}>
+      <ThemeProvider value={DefaultTheme}>
+        <RootNavigator fontsLoaded={fontsLoaded} />
+        <StatusBar style="auto" />
+      </ThemeProvider>
+    </AppContextProvider>
+  );
+}
+
+function RootNavigator({ fontsLoaded }: { readonly fontsLoaded: boolean }) {
+  const authStatus = useAuthStatus();
+  const user = useUser();
+  const ready = fontsLoaded && authStatus !== 'loading';
 
   useEffect(() => {
     if (ready) {
@@ -39,14 +46,16 @@ export default function RootLayout() {
     return null;
   }
 
+  const inHousehold = authStatus === 'authed' && user?.household_id != null;
+
   return (
-    <AppContextProvider loadAuthUser={loadAuthUser}>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        </Stack>
-        <StatusBar style="auto" />
-      </ThemeProvider>
-    </AppContextProvider>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Protected guard={inHousehold}>
+        <Stack.Screen name="(tabs)" />
+      </Stack.Protected>
+      <Stack.Protected guard={!inHousehold}>
+        <Stack.Screen name="(auth)" />
+      </Stack.Protected>
+    </Stack>
   );
 }
