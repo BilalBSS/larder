@@ -27,6 +27,7 @@ export interface UseShoppingListDeps {
 }
 
 export interface UseShoppingListResult {
+  readonly items: ShoppingListItem[];
   readonly toBuy: ShoppingListItem[];
   readonly gotIt: ShoppingListItem[];
   readonly loading: boolean;
@@ -156,6 +157,7 @@ export function useShoppingList(
   );
 
   return {
+    items: [...groups.toBuy, ...groups.gotIt],
     toBuy: groups.toBuy,
     gotIt: groups.gotIt,
     loading,

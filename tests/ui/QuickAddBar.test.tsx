@@ -8,7 +8,7 @@ describe('QuickAddBar', () => {
     render(<QuickAddBar onAdd={onAdd} />);
     const input = screen.getByLabelText('new item name');
     fireEvent.changeText(input, '  eggs  ');
-    fireEvent.press(screen.getByRole('button', { name: 'Add' }));
+    fireEvent(input, 'submitEditing');
     expect(onAdd).toHaveBeenCalledWith('eggs');
     expect(input.props.value).toBe('');
   });
@@ -16,16 +16,14 @@ describe('QuickAddBar', () => {
   it('ignores an empty submission', () => {
     const onAdd = jest.fn();
     render(<QuickAddBar onAdd={onAdd} />);
-    fireEvent.press(screen.getByRole('button', { name: 'Add' }));
+    fireEvent(screen.getByLabelText('new item name'), 'submitEditing');
     expect(onAdd).not.toHaveBeenCalled();
   });
 
-  it('adds on submit editing', () => {
-    const onAdd = jest.fn();
-    render(<QuickAddBar onAdd={onAdd} />);
-    const input = screen.getByLabelText('new item name');
-    fireEvent.changeText(input, 'bread');
-    fireEvent(input, 'submitEditing');
-    expect(onAdd).toHaveBeenCalledWith('bread');
+  it('exposes the scan control when a handler is given', () => {
+    const onScan = jest.fn();
+    render(<QuickAddBar onAdd={jest.fn()} onScan={onScan} />);
+    fireEvent.press(screen.getByLabelText('Scan barcode'));
+    expect(onScan).toHaveBeenCalled();
   });
 });

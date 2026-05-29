@@ -1,5 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Pressable } from 'react-native';
+import { Check } from 'lucide-react-native';
+import { Pressable, View } from 'react-native';
+
+import { Icon } from './Icon';
 
 export interface CheckboxProps {
   readonly checked: boolean;
@@ -15,9 +17,14 @@ export function Checkbox({ checked, onPress, accessibilityLabel }: CheckboxProps
       accessibilityState={{ checked }}
       accessibilityLabel={accessibilityLabel}
       hitSlop={8}
-      className={`h-6 w-6 items-center justify-center rounded border ${checked ? 'border-terracotta bg-terracotta' : 'border-line bg-surface'}`}
     >
-      {checked ? <Ionicons name="checkmark" size={16} color="#FFFFFF" /> : null}
+      <View
+        className={`h-[22px] w-[22px] items-center justify-center rounded-2 border ${
+          checked ? 'border-urgency-fresh bg-urgency-fresh' : 'border-edge bg-surface'
+        }`}
+      >
+        {checked ? <Icon icon={Check} accessibilityLabel="" size={14} color="#FFFCF4" /> : null}
+      </View>
     </Pressable>
   );
 }

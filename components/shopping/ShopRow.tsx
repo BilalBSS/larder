@@ -1,50 +1,91 @@
 // / shopping list row
-import { Ionicons } from '@expo/vector-icons';
-import { View } from 'react-native';
+import { ChevronRight, Sparkle } from 'lucide-react-native';
+import { Pressable, View } from 'react-native';
 
 import { ownerLabel, type ShoppingListItem } from '@domain/entities/shopping-list-item';
+import { Avatar } from '@ui/Avatar';
 import { Checkbox } from '@ui/Checkbox';
-import { IconButton } from '@ui/IconButton';
+import { Icon } from '@ui/Icon';
 import { Text } from '@ui/Text';
+
+// / muted chevron token
+const MUTED = '#9A8F82';
+// / terracotta accent token
+const TERRACOTTA = '#B5532D';
 
 export interface ShopRowProps {
   readonly item: ShoppingListItem;
   readonly currentUserId: string;
   readonly onToggle: (item: ShoppingListItem) => void;
-  readonly onRemove: (item: ShoppingListItem) => void;
+  readonly onOpen?: (item: ShoppingListItem) => void;
+  readonly last?: boolean;
+  readonly smart?: boolean;
 }
 
-export function ShopRow({ item, currentUserId, onToggle, onRemove }: ShopRowProps) {
+export function ShopRow({
+  item,
+  currentUserId,
+  onToggle,
+  onOpen,
+  last = false,
+  smart = false,
+}: ShopRowProps) {
   const quantityLabel = formatQuantity(item);
   const owned = ownerLabel(item, currentUserId) === 'mine';
+  const checked = item.isCheckedOff;
+  const ownerId = item.ownerUserId ?? item.addedByUserId;
   return (
-    <View className="flex-row items-center gap-3 border-b border-line px-4 py-3">
+    <Pressable
+      onPress={onOpen !== undefined ? () => onOpen(item) : undefined}
+      className={`flex-row items-center gap-3 px-3 py-3 ${last ? '' : 'border-b border-hairline'}`}
+    >
       <Checkbox
-        checked={item.isCheckedOff}
+        checked={checked}
         onPress={() => onToggle(item)}
         accessibilityLabel={`toggle ${item.displayName}`}
       />
       <View className="flex-1">
         <Text
-          variant="body"
-          tone={item.isCheckedOff ? 'muted' : 'default'}
-          className={item.isCheckedOff ? 'line-through' : ''}
+          variant="body-strong"
+          tone={checked ? 'muted' : 'ink'}
+          className={checked ? 'line-through' : ''}
         >
           {item.displayName}
         </Text>
-        {quantityLabel !== null ? (
-          <Text variant="caption" tone="muted">
-            {quantityLabel}
-          </Text>
-        ) : null}
+        <View className="mt-[2px] flex-row items-center gap-[6px]">
+          {quantityLabel !== null ? (
+            <Text variant="meta" tone="mid">
+              {quantityLabel}
+            </Text>
+          ) : null}
+          {smart ? (
+            <>
+              <Text variant="meta" tone="muted">
+                ·
+              </Text>
+              <View className="flex-row items-center gap-[3px]">
+                <Icon icon={Sparkle} accessibilityLabel="" size={10} color={TERRACOTTA} />
+                <Text variant="meta" tone="terracotta">
+                  smart re-order
+                </Text>
+              </View>
+            </>
+          ) : null}
+          {owned ? (
+            <>
+              <Text variant="meta" tone="muted">
+                ·
+              </Text>
+              <Text variant="meta" tone="mid">
+                mine
+              </Text>
+            </>
+          ) : null}
+        </View>
       </View>
-      <Text variant="caption" tone="muted">
-        {owned ? 'Mine' : 'Household'}
-      </Text>
-      <IconButton onPress={() => onRemove(item)} accessibilityLabel={`remove ${item.displayName}`}>
-        <Ionicons name="trash-outline" size={18} color="#8A8178" />
-      </IconButton>
-    </View>
+      <Avatar userId={ownerId} size={20} />
+      <Icon icon={ChevronRight} accessibilityLabel="" size={14} color={MUTED} />
+    </Pressable>
   );
 }
 

@@ -1,25 +1,31 @@
 // / shopping list screen
-import { FlashList } from '@shopify/flash-list';
-import { ActivityIndicator, View } from 'react-native';
+import { MoreHorizontal, Share2 } from 'lucide-react-native';
+import { Fragment } from 'react';
+import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 import { QuickAddBar } from '@/components/shopping/QuickAddBar';
 import { ShopRow } from '@/components/shopping/ShopRow';
+import { SmartReorderBanner } from '@/components/shopping/SmartReorderBanner';
 import { useShoppingList } from '@/components/shopping/useShoppingList';
-import type { ShoppingListItem } from '@domain/entities/shopping-list-item';
+import { groupByCategory } from '@domain/entities/group-by-category';
 import { useUser } from '@foundation/context';
 import { Button } from '@ui/Button';
+import { Card } from '@ui/Card';
+import { IconButton } from '@ui/IconButton';
+import { Pill } from '@ui/Pill';
 import { Screen } from '@ui/Screen';
+import { SectionHead } from '@ui/SectionHead';
 import { Text } from '@ui/Text';
+import { TopBar } from '@ui/TopBar';
 
-type Row =
-  | { readonly kind: 'header'; readonly key: string; readonly title: string }
-  | { readonly kind: 'item'; readonly key: string; readonly item: ShoppingListItem };
+// / fresh dot token
+const FRESH = '#4F7C45';
 
 export default function ShoppingScreen() {
   const user = useUser();
   const householdId = user?.household_id ?? null;
   const currentUserId = user?.id ?? '';
-  const { toBuy, gotIt, loading, error, add, toggle, remove, reload } = useShoppingList({
+  const { items, loading, error, add, toggle, reload } = useShoppingList({
     householdId,
     userId: currentUserId,
   });
@@ -27,71 +33,94 @@ export default function ShoppingScreen() {
   if (householdId === null) {
     return (
       <Screen className="items-center justify-center px-8">
-        <Text variant="heading">No household yet</Text>
-        <Text variant="body" tone="muted" className="mt-2 text-center">
-          Join or create a household to start a shared shopping list.
+        <Text variant="title" className="text-center">
+          No household yet.
+        </Text>
+        <Text variant="body" tone="mid" className="mt-2 text-center">
+          Create or join a household to start a shared list.
         </Text>
       </Screen>
     );
   }
 
-  const rows = buildRows(toBuy, gotIt);
+  const sections = groupByCategory(items);
+  const remaining = items.filter((item) => !item.isCheckedOff).length;
+  const contributors = new Set(items.map((item) => item.ownerUserId ?? item.addedByUserId)).size;
 
   return (
     <Screen>
-      <QuickAddBar onAdd={add} />
-      {error !== null ? (
-        <View className="flex-row items-center justify-between px-4 py-2">
-          <Text variant="caption" tone="terracotta">
-            Could not load your list.
-          </Text>
-          <Button label="Retry" variant="ghost" onPress={reload} />
-        </View>
-      ) : null}
-      <FlashList
-        data={rows}
-        keyExtractor={(row) => row.key}
-        renderItem={({ item: row }) =>
-          row.kind === 'header' ? (
-            <Text variant="label" tone="muted" className="px-4 pb-1 pt-4">
-              {row.title}
-            </Text>
-          ) : (
-            <ShopRow
-              item={row.item}
-              currentUserId={currentUserId}
-              onToggle={toggle}
-              onRemove={remove}
-            />
-          )
-        }
-        ListEmptyComponent={
-          loading ? (
-            <View className="items-center px-8 py-16">
-              <ActivityIndicator testID="shopping-loading" color="#C8663F" />
-            </View>
-          ) : (
-            <View className="items-center px-8 py-16">
-              <Text variant="body" tone="muted" className="text-center">
-                Your list is empty. Add something above.
+      <TopBar
+        title="Shopping"
+        eyebrow={`Live · ${contributors} on this list`}
+        sub={`${remaining} of ${items.length} to grab`}
+        trailing={
+          <>
+            <Pill>
+              <View className="h-[7px] w-[7px] rounded-pill" style={{ backgroundColor: FRESH }} />
+              <Text variant="meta" tone="mid">
+                Live
               </Text>
-            </View>
-          )
+            </Pill>
+            <IconButton icon={Share2} onPress={noop} accessibilityLabel="Share list" tone="ghost" />
+            <IconButton
+              icon={MoreHorizontal}
+              onPress={noop}
+              accessibilityLabel="More options"
+              tone="ghost"
+            />
+          </>
         }
       />
+      <ScrollView contentContainerClassName="gap-3 px-4 pb-10">
+        <QuickAddBar onAdd={add} />
+        <SmartReorderBanner />
+        {error !== null ? (
+          <View className="flex-row items-center justify-between">
+            <Text variant="meta" tone="urgent">
+              Could not load your list. Check your connection.
+            </Text>
+            <Button label="Retry" kind="ghost" size="sm" onPress={reload} />
+          </View>
+        ) : null}
+        {loading && items.length === 0 ? (
+          <View className="items-center py-16">
+            <ActivityIndicator testID="shopping-loading" color={FRESH} />
+          </View>
+        ) : sections.length === 0 ? (
+          <View className="items-center px-4 py-16">
+            <Text variant="title" className="text-center">
+              Your list is empty.
+            </Text>
+            <Text variant="body" tone="mid" className="mt-2 text-center">
+              Add something above to get started.
+            </Text>
+          </View>
+        ) : (
+          <Card>
+            {sections.map((section, sectionIndex) => (
+              <Fragment key={section.key}>
+                <SectionHead
+                  title={section.title}
+                  remaining={section.remaining}
+                  total={section.items.length}
+                  first={sectionIndex === 0}
+                />
+                {section.items.map((item, itemIndex) => (
+                  <ShopRow
+                    key={item.id}
+                    item={item}
+                    currentUserId={currentUserId}
+                    onToggle={toggle}
+                    last={itemIndex === section.items.length - 1}
+                  />
+                ))}
+              </Fragment>
+            ))}
+          </Card>
+        )}
+      </ScrollView>
     </Screen>
   );
 }
 
-function buildRows(toBuy: ShoppingListItem[], gotIt: ShoppingListItem[]): Row[] {
-  const rows: Row[] = [];
-  if (toBuy.length > 0) {
-    rows.push({ kind: 'header', key: 'h-to-buy', title: 'To buy' });
-    for (const item of toBuy) rows.push({ kind: 'item', key: item.id, item });
-  }
-  if (gotIt.length > 0) {
-    rows.push({ kind: 'header', key: 'h-got-it', title: 'Got it' });
-    for (const item of gotIt) rows.push({ kind: 'item', key: item.id, item });
-  }
-  return rows;
-}
+function noop(): void {}

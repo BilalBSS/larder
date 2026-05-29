@@ -33,6 +33,7 @@ function item(overrides: Partial<ShoppingListItem> = {}): ShoppingListItem {
 
 function hookReturn(overrides: Record<string, unknown> = {}) {
   return {
+    items: [],
     toBuy: [],
     gotIt: [],
     loading: false,
@@ -54,14 +55,14 @@ describe('ShoppingScreen', () => {
     mockUseUser.mockReturnValue({ id: 'u-1', household_id: null, tier: 'free' });
     mockUseShoppingList.mockReturnValue(hookReturn());
     render(<ShoppingScreen />);
-    expect(screen.getByText('No household yet')).toBeOnTheScreen();
+    expect(screen.getByText('No household yet.')).toBeOnTheScreen();
   });
 
   it('shows the empty list state', () => {
     mockUseUser.mockReturnValue({ id: 'u-1', household_id: 'h-1', tier: 'free' });
     mockUseShoppingList.mockReturnValue(hookReturn());
     render(<ShoppingScreen />);
-    expect(screen.getByText(/Your list is empty/)).toBeOnTheScreen();
+    expect(screen.getByText('Your list is empty.')).toBeOnTheScreen();
   });
 
   it('shows a loading indicator during the initial load', () => {
@@ -69,22 +70,38 @@ describe('ShoppingScreen', () => {
     mockUseShoppingList.mockReturnValue(hookReturn({ loading: true }));
     render(<ShoppingScreen />);
     expect(screen.getByTestId('shopping-loading')).toBeOnTheScreen();
-    expect(screen.queryByText(/Your list is empty/)).toBeNull();
+    expect(screen.queryByText('Your list is empty.')).toBeNull();
   });
 
-  it('renders both sections', () => {
+  it('groups items into category sections', () => {
     mockUseUser.mockReturnValue({ id: 'u-1', household_id: 'h-1', tier: 'free' });
     mockUseShoppingList.mockReturnValue(
       hookReturn({
-        toBuy: [item({ id: 'a', displayName: 'Milk' })],
-        gotIt: [item({ id: 'b', displayName: 'Bread', isCheckedOff: true })],
+        items: [
+          item({ id: 'a', displayName: 'Milk', category: 'Dairy' }),
+          item({ id: 'b', displayName: 'Lemons', category: 'Produce', isCheckedOff: true }),
+        ],
       }),
     );
     render(<ShoppingScreen />);
-    expect(screen.getByText('To buy')).toBeOnTheScreen();
+    expect(screen.getByText('Produce')).toBeOnTheScreen();
+    expect(screen.getByText('Dairy')).toBeOnTheScreen();
     expect(screen.getByText('Milk')).toBeOnTheScreen();
-    expect(screen.getByText('Got it')).toBeOnTheScreen();
-    expect(screen.getByText('Bread')).toBeOnTheScreen();
+    expect(screen.getByText('Lemons')).toBeOnTheScreen();
+  });
+
+  it('reports the remaining count in the sub heading', () => {
+    mockUseUser.mockReturnValue({ id: 'u-1', household_id: 'h-1', tier: 'free' });
+    mockUseShoppingList.mockReturnValue(
+      hookReturn({
+        items: [
+          item({ id: 'a', category: 'Dairy' }),
+          item({ id: 'b', category: 'Produce', isCheckedOff: true }),
+        ],
+      }),
+    );
+    render(<ShoppingScreen />);
+    expect(screen.getByText('1 of 2 to grab')).toBeOnTheScreen();
   });
 
   it('forwards a new item to the add handler', () => {
@@ -93,15 +110,15 @@ describe('ShoppingScreen', () => {
     mockUseShoppingList.mockReturnValue(hookReturn({ add }));
     render(<ShoppingScreen />);
     fireEvent.changeText(screen.getByLabelText('new item name'), 'cheese');
-    fireEvent.press(screen.getByRole('button', { name: 'Add' }));
+    fireEvent(screen.getByLabelText('new item name'), 'submitEditing');
     expect(add).toHaveBeenCalledWith('cheese');
   });
 
   it('toggles an item from its row', () => {
     const toggle = jest.fn();
-    const milk = item({ id: 'a', displayName: 'Milk' });
+    const milk = item({ id: 'a', displayName: 'Milk', category: 'Dairy' });
     mockUseUser.mockReturnValue({ id: 'u-1', household_id: 'h-1', tier: 'free' });
-    mockUseShoppingList.mockReturnValue(hookReturn({ toBuy: [milk], toggle }));
+    mockUseShoppingList.mockReturnValue(hookReturn({ items: [milk], toggle }));
     render(<ShoppingScreen />);
     fireEvent.press(screen.getByLabelText('toggle Milk'));
     expect(toggle).toHaveBeenCalledWith(milk);
@@ -112,7 +129,7 @@ describe('ShoppingScreen', () => {
     mockUseUser.mockReturnValue({ id: 'u-1', household_id: 'h-1', tier: 'free' });
     mockUseShoppingList.mockReturnValue(hookReturn({ error: new Error('boom'), reload }));
     render(<ShoppingScreen />);
-    expect(screen.getByText('Could not load your list.')).toBeOnTheScreen();
+    expect(screen.getByText(/Could not load your list/)).toBeOnTheScreen();
     fireEvent.press(screen.getByRole('button', { name: 'Retry' }));
     expect(reload).toHaveBeenCalled();
   });
