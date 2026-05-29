@@ -1,7 +1,8 @@
 // / app context provider
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { startSessionRefresh, stopSessionRefresh } from './auth/session';
 import { supabase } from './auth/supabase';
 import { ENTITLEMENTS, type Entitlements, type Tier } from './billing/entitlements';
 import { makeClientLlmRouter, type ClientLlmRouter } from './llm/router';
@@ -11,9 +12,11 @@ import { captureException } from './monitoring/sentry';
 
 export interface AuthUser {
   readonly id: string;
-  readonly household_id: string;
+  readonly household_id: string | null;
   readonly tier: Tier;
 }
+
+export type LoadAuthUser = (userId: string) => Promise<AuthUser>;
 
 export interface AppContextValue {
   readonly supabase: SupabaseClient;
@@ -26,13 +29,61 @@ export interface AppContextValue {
 
 const Ctx = createContext<AppContextValue | null>(null);
 
-export function AppContextProvider({ children }: { children: React.ReactNode }) {
-  const user: AuthUser | null = null;
-  const tier: Tier = 'free';
-  const entitlements = ENTITLEMENTS[tier];
+export interface AppContextProviderProps {
+  readonly children: React.ReactNode;
+  readonly loadAuthUser: LoadAuthUser;
+}
+
+export function AppContextProvider({ children, loadAuthUser }: AppContextProviderProps) {
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const loadRef = useRef<LoadAuthUser>(loadAuthUser);
 
   const [posthog] = useState<PosthogClient | null>(() => initPosthog());
   const logger = useMemo<Logger>(() => makeLogger({ console, onError: captureException }), []);
+
+  useEffect(() => {
+    loadRef.current = loadAuthUser;
+  }, [loadAuthUser]);
+
+  useEffect(() => {
+    let mounted = true;
+    let loadedUserId: string | null = null;
+
+    startSessionRefresh();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session === null || event === 'SIGNED_OUT') {
+        loadedUserId = null;
+        if (mounted) setUser(null);
+        return;
+      }
+      const userId = session.user.id;
+      if (userId === loadedUserId) return;
+      loadedUserId = userId;
+      loadRef.current(userId).then(
+        (loaded) => {
+          if (mounted && loadedUserId === userId) setUser(loaded);
+        },
+        (error: unknown) => {
+          if (loadedUserId === userId) {
+            loadedUserId = null;
+            if (mounted) setUser(null);
+          }
+          logger.error('load_auth_user_failed', error);
+        },
+      );
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+      stopSessionRefresh();
+    };
+  }, [logger]);
+
+  const tier: Tier = user?.tier ?? 'free';
+  const entitlements = ENTITLEMENTS[tier];
   const llmRouter = useMemo<ClientLlmRouter>(
     () => makeClientLlmRouter({ supabase, entitlements }),
     [entitlements],
@@ -40,7 +91,7 @@ export function AppContextProvider({ children }: { children: React.ReactNode }) 
 
   const value = useMemo<AppContextValue>(
     () => ({ supabase, logger, posthog, user, entitlements, llmRouter }),
-    [logger, posthog, entitlements, llmRouter],
+    [logger, posthog, user, entitlements, llmRouter],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
@@ -50,6 +101,10 @@ export function useAppContext(): AppContextValue {
   const value = useContext(Ctx);
   if (value === null) throw new Error('useAppContext used outside AppContextProvider');
   return value;
+}
+
+export function useUser(): AuthUser | null {
+  return useAppContext().user;
 }
 
 export function useEntitlements(): Entitlements {

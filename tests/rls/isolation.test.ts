@@ -129,6 +129,46 @@ runRls('recipe_interactions household read scope', () => {
   });
 });
 
+runRls('shopping_list_items isolation', () => {
+  it('user A adds an item to own household', async () => {
+    const res = await anonClient(f.a.jwt).from('shopping_list_items').insert({
+      household_id: f.a.household_id,
+      canonical_name: 'milk',
+      display_name: 'Milk',
+      added_by_user_id: f.a.user_id,
+    });
+    expect(res.error).toBeNull();
+  });
+
+  it('user A reads own household items', async () => {
+    const res = await anonClient(f.a.jwt)
+      .from('shopping_list_items')
+      .select('id')
+      .eq('household_id', f.a.household_id);
+    expect(res.error).toBeNull();
+    expect((res.data ?? []).length).toBeGreaterThan(0);
+  });
+
+  it('user A reads zero rows from user B household', async () => {
+    const res = await anonClient(f.a.jwt)
+      .from('shopping_list_items')
+      .select('id')
+      .eq('household_id', f.b.household_id);
+    expect(res.error).toBeNull();
+    expect(res.data).toEqual([]);
+  });
+
+  it('user A cannot insert into user B household', async () => {
+    const res = await anonClient(f.a.jwt).from('shopping_list_items').insert({
+      household_id: f.b.household_id,
+      canonical_name: 'eggs',
+      display_name: 'Eggs',
+      added_by_user_id: f.a.user_id,
+    });
+    expect(res.error).not.toBeNull();
+  });
+});
+
 runRls('canonical_ingredients shared read', () => {
   it('any authenticated user can read', async () => {
     const res = await anonClient(f.a.jwt).from('canonical_ingredients').select('id').limit(1);
