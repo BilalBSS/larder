@@ -12,13 +12,3 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
     multiRemove: jest.fn(() => Promise.resolve()),
   },
 }));
-
-jest.mock('@shopify/flash-list', () => {
-  const RN = require('react-native');
-  return { __esModule: true, FlashList: RN.FlatList };
-});
-
-jest.mock('@expo/vector-icons', () => {
-  const RN = require('react-native');
-  return { __esModule: true, Ionicons: RN.View, MaterialIcons: RN.View };
-});
