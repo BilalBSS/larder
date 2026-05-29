@@ -120,4 +120,31 @@ describe('AppContextProvider auth lifecycle', () => {
     view.unmount();
     expect(subscription.data.subscription.unsubscribe).toHaveBeenCalledTimes(1);
   });
+
+  it('ignores a stale load that resolves after a newer session', async () => {
+    const resolvers: Record<string, () => void> = {};
+    const loadAuthUser = jest.fn(
+      (id: string) =>
+        new Promise<AuthUser>((resolve) => {
+          resolvers[id] = () => resolve({ id, household_id: 'h-1', tier: 'free' });
+        }),
+    );
+    render(
+      <AppContextProvider loadAuthUser={loadAuthUser}>
+        <Probe />
+      </AppContextProvider>,
+    );
+    const callback = onAuthStateChange.mock.calls[0]?.[0] as (e: string, s: unknown) => void;
+    await act(async () => {
+      callback('SIGNED_IN', sessionFor('u-1'));
+      callback('SIGNED_IN', sessionFor('u-2'));
+    });
+    await act(async () => {
+      resolvers['u-2']?.();
+    });
+    await act(async () => {
+      resolvers['u-1']?.();
+    });
+    expect(screen.getByTestId('uid')).toHaveTextContent('u-2');
+  });
 });

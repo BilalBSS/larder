@@ -63,11 +63,13 @@ export function AppContextProvider({ children, loadAuthUser }: AppContextProvide
       loadedUserId = userId;
       loadRef.current(userId).then(
         (loaded) => {
-          if (mounted) setUser(loaded);
+          if (mounted && loadedUserId === userId) setUser(loaded);
         },
         (error: unknown) => {
-          loadedUserId = null;
-          if (mounted) setUser(null);
+          if (loadedUserId === userId) {
+            loadedUserId = null;
+            if (mounted) setUser(null);
+          }
           logger.error('load_auth_user_failed', error);
         },
       );
