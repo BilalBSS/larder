@@ -10,7 +10,7 @@ import { TopBar } from '@ui/TopBar';
 
 export default function SpendingScreen() {
   return (
-    <Screen>
+    <Screen edges={['top']}>
       <TopBar eyebrow="This month" title="Spending" sub="What your food actually costs." />
       <View className="flex-1 items-center justify-center px-8">
         <Icon icon={Wallet} accessibilityLabel="" size={32} color={TERRACOTTA} />

@@ -31,7 +31,7 @@ export default function Onboarding() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
-          contentContainerClassName="flex-grow px-6 pt-16 pb-8"
+          contentContainerClassName="flex-grow px-6 pt-3 pb-8"
           keyboardShouldPersistTaps="handled"
         >
           <Logo size={40} />

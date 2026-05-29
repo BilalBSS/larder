@@ -14,7 +14,7 @@ const BULLETS = [
 export default function Welcome() {
   return (
     <Screen>
-      <View className="flex-1 px-6 pb-8 pt-16">
+      <View className="flex-1 px-6 pb-4 pt-3">
         <Logo wordmark size={28} />
 
         <Text variant="display-xl" className="mt-8">

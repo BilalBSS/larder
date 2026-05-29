@@ -14,7 +14,7 @@ export default function YouScreen() {
   const user = useUser();
 
   return (
-    <Screen>
+    <Screen edges={['top']}>
       <TopBar eyebrow="Account" title="You" sub="Your household and settings." />
       <View className="flex-1 gap-3 px-4">
         {user !== null ? (

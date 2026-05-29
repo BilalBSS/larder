@@ -9,7 +9,7 @@ import { Text } from '@ui/Text';
 
 export default function PantryScreen() {
   return (
-    <Screen className="items-center justify-center px-8">
+    <Screen edges={['top']} className="items-center justify-center px-8">
       <Logo size={40} wordmark />
       <Text variant="display-lg" className="mt-8 text-center">
         Let&apos;s stock the pantry.
