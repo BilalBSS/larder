@@ -5,10 +5,8 @@ import { View } from 'react-native';
 import { Icon } from '@ui/Icon';
 import { Screen } from '@ui/Screen';
 import { Text } from '@ui/Text';
+import { TERRACOTTA } from '@ui/tokens';
 import { TopBar } from '@ui/TopBar';
-
-// / terracotta accent token
-const TERRACOTTA = '#B5532D';
 
 export default function CookScreen() {
   return (

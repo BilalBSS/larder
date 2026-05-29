@@ -2,6 +2,7 @@ import { Check } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 
 import { Icon } from './Icon';
+import { SURFACE_2 } from './tokens';
 
 export interface CheckboxProps {
   readonly checked: boolean;
@@ -23,7 +24,7 @@ export function Checkbox({ checked, onPress, accessibilityLabel }: CheckboxProps
           checked ? 'border-urgency-fresh bg-urgency-fresh' : 'border-edge bg-surface'
         }`}
       >
-        {checked ? <Icon icon={Check} accessibilityLabel="" size={14} color="#FFFCF4" /> : null}
+        {checked ? <Icon icon={Check} accessibilityLabel="" size={14} color={SURFACE_2} /> : null}
       </View>
     </Pressable>
   );

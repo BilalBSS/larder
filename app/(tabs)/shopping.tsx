@@ -16,10 +16,8 @@ import { Pill } from '@ui/Pill';
 import { Screen } from '@ui/Screen';
 import { SectionHead } from '@ui/SectionHead';
 import { Text } from '@ui/Text';
+import { FRESH } from '@ui/tokens';
 import { TopBar } from '@ui/TopBar';
-
-// / fresh dot token
-const FRESH = '#4F7C45';
 
 export default function ShoppingScreen() {
   const user = useUser();

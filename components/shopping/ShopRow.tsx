@@ -7,9 +7,7 @@ import { Avatar } from '@ui/Avatar';
 import { Checkbox } from '@ui/Checkbox';
 import { Icon } from '@ui/Icon';
 import { Text } from '@ui/Text';
-
-// / terracotta accent token
-const TERRACOTTA = '#B5532D';
+import { TERRACOTTA } from '@ui/tokens';
 
 export interface ShopRowProps {
   readonly item: ShoppingListItem;

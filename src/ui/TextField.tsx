@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { TextInput, type TextInputProps } from 'react-native';
 
-// / muted placeholder token
-const PLACEHOLDER = '#9A8F82';
+import { MUTED } from './tokens';
 
 export type TextFieldProps = TextInputProps;
 
@@ -10,7 +9,7 @@ export function TextField({ className, onFocus, onBlur, ...rest }: TextFieldProp
   const [focused, setFocused] = useState(false);
   return (
     <TextInput
-      placeholderTextColor={PLACEHOLDER}
+      placeholderTextColor={MUTED}
       onFocus={(event) => {
         setFocused(true);
         onFocus?.(event);

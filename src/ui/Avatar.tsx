@@ -1,9 +1,7 @@
 import { Text, View } from 'react-native';
 
 import { deriveAvatarColor } from './avatar-color';
-
-// / cream initials token
-const INITIAL_COLOR = '#FFFCF4';
+import { SURFACE_2 } from './tokens';
 
 export interface AvatarProps {
   readonly userId: string;
@@ -29,7 +27,7 @@ export function Avatar({ userId, label, size = 22, ring = false }: AvatarProps) 
         style={{
           fontFamily: 'Manrope_600SemiBold',
           fontSize: Math.round(size * 0.45),
-          color: INITIAL_COLOR,
+          color: SURFACE_2,
         }}
       >
         {initial(userId, label)}

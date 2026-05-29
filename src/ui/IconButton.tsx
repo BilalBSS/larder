@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 
 import { Icon } from './Icon';
+import { INK, SURFACE_2 } from './tokens';
 
 export type IconButtonTone = 'default' | 'inset' | 'accent' | 'ghost';
 
@@ -29,10 +30,10 @@ const pressedClass: Record<IconButtonTone, string> = {
 };
 
 const iconColor: Record<IconButtonTone, string> = {
-  default: '#1C1814',
-  inset: '#1C1814',
-  accent: '#FFFCF4',
-  ghost: '#1C1814',
+  default: INK,
+  inset: INK,
+  accent: SURFACE_2,
+  ghost: INK,
 };
 
 export function IconButton({

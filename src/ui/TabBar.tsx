@@ -3,11 +3,7 @@ import { Pressable, View } from 'react-native';
 
 import { Icon } from './Icon';
 import { Text } from './Text';
-
-// / active ink token
-const INK = '#1C1814';
-// / inactive muted token
-const MUTED = '#9A8F82';
+import { INK, MUTED } from './tokens';
 
 export interface TabBarItem {
   readonly id: string;

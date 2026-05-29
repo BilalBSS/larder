@@ -3,11 +3,7 @@ import { TextInput, View } from 'react-native';
 
 import { Icon } from './Icon';
 import { IconButton } from './IconButton';
-
-// / muted placeholder token
-const PLACEHOLDER = '#9A8F82';
-// / mid icon token
-const MID = '#6B6359';
+import { MID, MUTED } from './tokens';
 
 export interface QuickAddProps {
   readonly value: string;
@@ -39,7 +35,7 @@ export function QuickAdd({
         onSubmitEditing={onSubmit}
         editable={editable}
         placeholder={placeholder}
-        placeholderTextColor={PLACEHOLDER}
+        placeholderTextColor={MUTED}
         returnKeyType="done"
         accessibilityLabel={inputAccessibilityLabel}
         className="flex-1 font-manrope-medium text-body text-ink"

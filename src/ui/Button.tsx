@@ -4,6 +4,7 @@ import { Pressable, View } from 'react-native';
 
 import { Icon } from './Icon';
 import { Text, type TextTone } from './Text';
+import { INK, SURFACE_2, URGENT_DEEP } from './tokens';
 
 export type ButtonKind = 'primary' | 'secondary' | 'accent' | 'ghost' | 'danger';
 export type ButtonSize = 'sm' | 'md' | 'lg';
@@ -53,11 +54,11 @@ const sizeClass: Record<ButtonSize, string> = {
 const iconSize: Record<ButtonSize, number> = { sm: 14, md: 16, lg: 18 };
 
 const iconColor: Record<ButtonKind, string> = {
-  primary: '#FFFCF4',
-  secondary: '#1C1814',
-  accent: '#FFFCF4',
-  ghost: '#1C1814',
-  danger: '#8E2A26',
+  primary: SURFACE_2,
+  secondary: INK,
+  accent: SURFACE_2,
+  ghost: INK,
+  danger: URGENT_DEEP,
 };
 
 export function Button({

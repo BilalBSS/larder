@@ -4,13 +4,10 @@ import { ActivityIndicator, View } from 'react-native';
 
 import { inviteService } from '@domain/use-cases/invite/service';
 import { useAuthStatus, useLogger, useRefreshUser } from '@foundation/context';
-import { Button, Logo, Screen, Text } from '@ui/index';
+import { Button, FRESH, Logo, Screen, Text } from '@ui/index';
 
 import { inviteMessage } from '../invite-copy';
 import { setPendingInvite } from '../pending-invite';
-
-// / fresh green token
-const FRESH = '#4F7C45';
 
 type Phase = 'working' | 'error';
 

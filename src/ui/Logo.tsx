@@ -1,8 +1,7 @@
 import { Text, View } from 'react-native';
 import Svg, { Line, Path, Rect } from 'react-native-svg';
 
-// / ink token default
-const INK = '#1C1814';
+import { INK } from './tokens';
 
 export interface LogoProps {
   readonly size?: number;

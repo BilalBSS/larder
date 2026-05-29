@@ -1,0 +1,8 @@
+// / mirror tailwind tokens
+export const INK = '#1C1814';
+export const MID = '#6B6359';
+export const MUTED = '#9A8F82';
+export const SURFACE_2 = '#FFFCF4';
+export const TERRACOTTA = '#B5532D';
+export const URGENT_DEEP = '#8E2A26';
+export const FRESH = '#4F7C45';

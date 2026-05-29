@@ -1,7 +1,6 @@
 import type { LucideIcon } from 'lucide-react-native';
 
-// / ink token default
-const INK = '#1C1814';
+import { INK } from './tokens';
 
 export interface IconProps {
   readonly icon: LucideIcon;
