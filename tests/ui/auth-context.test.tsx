@@ -194,3 +194,59 @@ describe('pending invite resolution', () => {
     expect(screen.getByTestId('status')).toHaveTextContent('authed');
   });
 });
+
+interface Deferred {
+  readonly promise: Promise<AuthUser>;
+  resolve(value: AuthUser): void;
+}
+
+function deferred(): Deferred {
+  let resolve: (value: AuthUser) => void = () => undefined;
+  const promise = new Promise<AuthUser>((r) => {
+    resolve = r;
+  });
+  return { promise, resolve };
+}
+
+describe('stale-session races', () => {
+  it('a stale load never clobbers a signed-out session', async () => {
+    const pending = deferred();
+    const loadAuthUser = jest.fn(() => pending.promise);
+    render(
+      <AppContextProvider loadAuthUser={loadAuthUser}>
+        <Probe />
+      </AppContextProvider>,
+    );
+    await emit('SIGNED_IN', sessionFor('u-1'));
+    await emit('SIGNED_OUT', null);
+    await act(async () => {
+      pending.resolve({ id: 'u-1', household_id: 'h-1', tier: 'free' });
+      await pending.promise;
+    });
+    expect(screen.getByTestId('status')).toHaveTextContent('anon');
+    expect(screen.getByTestId('household')).toHaveTextContent('none');
+  });
+
+  it('the latest sign-in wins when two races resolve', async () => {
+    const loads: Record<string, Deferred> = { 'u-1': deferred(), 'u-2': deferred() };
+    const loadAuthUser = jest.fn((id: string) => loads[id]?.promise as Promise<AuthUser>);
+    const resolvedFor: string[] = [];
+    const resolvePendingInvite = jest.fn(async (id: string) => {
+      resolvedFor.push(id);
+    });
+    render(
+      <AppContextProvider loadAuthUser={loadAuthUser} resolvePendingInvite={resolvePendingInvite}>
+        <Probe />
+      </AppContextProvider>,
+    );
+    await emit('SIGNED_IN', sessionFor('u-1'));
+    await emit('SIGNED_IN', sessionFor('u-2'));
+    await act(async () => {
+      loads['u-1']?.resolve({ id: 'u-1', household_id: 'h-1', tier: 'free' });
+      loads['u-2']?.resolve({ id: 'u-2', household_id: 'h-2', tier: 'free' });
+      await Promise.resolve();
+    });
+    expect(screen.getByTestId('household')).toHaveTextContent('h-2');
+    expect(resolvedFor).toEqual(['u-2']);
+  });
+});

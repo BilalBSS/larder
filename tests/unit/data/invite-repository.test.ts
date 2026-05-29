@@ -87,6 +87,20 @@ describe('inviteRepository.createInvite', () => {
       }),
     ).rejects.toEqual({ message: 'boom' });
   });
+
+  it('throws when the returned row is missing a token', async () => {
+    const { token: _omit, ...malformed } = row();
+    const from = stubFrom({ data: malformed, error: null });
+    const repo = makeInviteRepository({ supabase: makeSupabase({ from }) });
+    await expect(
+      repo.createInvite({
+        householdId: 'h-1',
+        role: 'member',
+        invitedByUserId: 'u-1',
+        expiresAt: '2026-06-05T00:00:00.000Z',
+      }),
+    ).rejects.toThrow();
+  });
 });
 
 describe('inviteRepository.acceptInvite', () => {
@@ -104,9 +118,15 @@ describe('inviteRepository.acceptInvite', () => {
   });
 
   it('maps an unknown rpc exception to a generic error', async () => {
-    const rpc = stubRpc({ data: null, error: { message: 'pgcode 23505 something' } });
+    const rpc = stubRpc({ data: null, error: { message: 'connection reset' } });
     const repo = makeInviteRepository({ supabase: makeSupabase({ rpc }) });
     await expect(repo.acceptInvite('tok-1')).rejects.toThrow('invite_accept_failed');
+  });
+
+  it('maps a unique violation to invite_already_accepted', async () => {
+    const rpc = stubRpc({ data: null, error: { code: '23505', message: 'duplicate key' } });
+    const repo = makeInviteRepository({ supabase: makeSupabase({ rpc }) });
+    await expect(repo.acceptInvite('tok-1')).rejects.toThrow('invite_already_accepted');
   });
 
   it('throws when the rpc returns a non-string payload', async () => {

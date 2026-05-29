@@ -23,10 +23,17 @@ describe('makeResolvePendingInvite', () => {
     expect(d.clearToken).toHaveBeenCalled();
   });
 
-  it('leaves the token in place when accept fails', async () => {
+  it('clears the token on a terminal error', async () => {
     const d = deps('tok-7');
     d.accept.mockRejectedValue(new Error('invite_expired'));
     await expect(makeResolvePendingInvite(d)('u-1')).rejects.toThrow('invite_expired');
+    expect(d.clearToken).toHaveBeenCalled();
+  });
+
+  it('keeps the token on a transient error', async () => {
+    const d = deps('tok-7');
+    d.accept.mockRejectedValue(new Error('invite_accept_failed'));
+    await expect(makeResolvePendingInvite(d)('u-1')).rejects.toThrow('invite_accept_failed');
     expect(d.clearToken).not.toHaveBeenCalled();
   });
 });

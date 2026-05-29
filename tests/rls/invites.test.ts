@@ -117,6 +117,15 @@ runRls('create_household_with_owner', () => {
       .eq('user_id', invitee.user_id);
     expect(member.error).toBeNull();
     expect((member.data as { role: string }[] | null)?.[0]?.role).toBe('owner');
+
+    const owned = await client
+      .from('households')
+      .select('created_by_user_id')
+      .eq('id', householdId as string)
+      .single();
+    expect((owned.data as { created_by_user_id: string } | null)?.created_by_user_id).toBe(
+      invitee.user_id,
+    );
   });
 
   it('rejects an invalid household type', async () => {
@@ -174,6 +183,75 @@ runRls('accept_invite', () => {
       const after = await client.from('households').select('id').eq('id', f.a.household_id);
       expect((after.data ?? []).length).toBe(1);
     } finally {
+      await joiner.teardown();
+    }
+  });
+
+  it('binds role and identity from the invite, not params', async () => {
+    const joiner = await makeBareActor();
+    try {
+      const token = await seedInvite({ role: 'child' });
+      const client = anonClient(joiner.jwt);
+
+      const rpc = await client.rpc('accept_invite', { p_token: token });
+      expect(rpc.error).toBeNull();
+
+      const member = await client
+        .from('household_members')
+        .select('role')
+        .eq('household_id', f.a.household_id)
+        .eq('user_id', joiner.user_id)
+        .single();
+      expect((member.data as { role: string } | null)?.role).toBe('child');
+
+      const invite = await adminClient()
+        .from('household_invites')
+        .select('accepted_by_user_id')
+        .eq('token', token)
+        .single();
+      expect((invite.data as { accepted_by_user_id: string } | null)?.accepted_by_user_id).toBe(
+        joiner.user_id,
+      );
+    } finally {
+      await joiner.teardown();
+    }
+  });
+
+  it('rejects a second join via the unique constraint', async () => {
+    const joiner = await makeBareActor();
+    try {
+      const client = anonClient(joiner.jwt);
+
+      const first = await client.rpc('accept_invite', { p_token: await seedInvite({}) });
+      expect(first.error).toBeNull();
+
+      const second = await client.rpc('accept_invite', { p_token: await seedInvite({}) });
+      expect(second.error).not.toBeNull();
+    } finally {
+      await joiner.teardown();
+    }
+  });
+
+  it('rejects an invite whose household was soft-deleted', async () => {
+    const joiner = await makeBareActor();
+    const admin = adminClient();
+    const created = await admin
+      .from('households')
+      .insert({ name: 'Ghost', household_type: 'family', created_by_user_id: f.a.user_id })
+      .select('id')
+      .single();
+    const ghostId = (created.data as { id: string }).id;
+    try {
+      const token = await seedInvite({ household_id: ghostId });
+      await admin
+        .from('households')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', ghostId);
+
+      const rpc = await anonClient(joiner.jwt).rpc('accept_invite', { p_token: token });
+      expect(rpc.error).not.toBeNull();
+    } finally {
+      await admin.from('households').delete().eq('id', ghostId);
       await joiner.teardown();
     }
   });

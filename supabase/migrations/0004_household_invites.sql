@@ -93,6 +93,12 @@ begin
   if invite.accepted_at is not null then
     raise exception 'invite_already_accepted';
   end if;
+  if not exists (
+    select 1 from households
+    where id = invite.household_id and deleted_at is null
+  ) then
+    raise exception 'invite_not_found';
+  end if;
 
   -- unique(household_id, user_id) fails closed on double-join
   insert into household_members (household_id, user_id, role)
@@ -111,14 +117,14 @@ revoke all on function accept_invite(uuid) from public;
 grant execute on function accept_invite(uuid) to authenticated;
 
 -- ============================================================================
--- close the client-side self-insert escape hatch
+-- close client-side insert hatch
 -- ============================================================================
 
+-- definer rpcs insert only
 drop policy household_members_insert on household_members;
+drop policy households_insert on households;
 
-create policy household_members_insert on household_members
-  for insert to authenticated
-  with check (is_household_member(household_id));
+revoke insert on households, household_members from authenticated;
 
 -- ============================================================================
 -- grants (auto-expose disabled in project settings)

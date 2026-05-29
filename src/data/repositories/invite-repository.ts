@@ -67,13 +67,16 @@ export function makeInviteRepository(deps: InviteRepositoryDeps): InviteReposito
 
 interface RpcError {
   readonly message?: string;
+  readonly code?: string;
 }
 
 const KNOWN_CODES = ['invite_not_found', 'invite_expired', 'invite_already_accepted'] as const;
 
 // / map rpc error
 function inviteErrorCode(error: unknown): string {
-  const message = (error as RpcError).message ?? '';
-  const known = KNOWN_CODES.find((code) => message.includes(code));
+  const { message = '', code } = error as RpcError;
+  // / unique violation
+  if (code === '23505' || message.includes('23505')) return 'invite_already_accepted';
+  const known = KNOWN_CODES.find((known) => message.includes(known));
   return known ?? 'invite_accept_failed';
 }
