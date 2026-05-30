@@ -22,10 +22,12 @@ module.exports = {
   collectCoverageFrom: [
     'src/ui/**/*.{ts,tsx}',
     'components/shopping/**/*.{ts,tsx}',
+    'components/pantry/**/*.{ts,tsx}',
     'src/foundation/context.tsx',
     'src/domain/use-cases/auth/**/*.ts',
     'app/\\(auth\\)/**/*.{ts,tsx}',
     'app/\\(tabs\\)/**/*.tsx',
+    'app/add-item.tsx',
     'app/join/**/*.tsx',
     'src/shell/**/*.{ts,tsx}',
     '!**/index.ts',
