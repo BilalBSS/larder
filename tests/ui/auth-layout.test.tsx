@@ -24,12 +24,13 @@ beforeEach(() => {
 });
 
 describe('AuthLayout', () => {
-  it('exposes onboarding to an authed user, not the sign-in screens', () => {
+  it('exposes only onboarding to an authed user', () => {
     setStatus('authed');
     render(<AuthLayout />);
     expect(screen.getByText('onboarding')).toBeOnTheScreen();
     expect(screen.queryByText('sign-in')).toBeNull();
     expect(screen.queryByText('sign-up')).toBeNull();
+    expect(screen.queryByText('join/[token]')).toBeNull();
   });
 
   it('exposes the sign-in screens to an anonymous visitor, not onboarding', () => {
@@ -38,11 +39,5 @@ describe('AuthLayout', () => {
     expect(screen.getByText('sign-in')).toBeOnTheScreen();
     expect(screen.getByText('sign-up')).toBeOnTheScreen();
     expect(screen.queryByText('onboarding')).toBeNull();
-  });
-
-  it('always exposes the deep-link join route', () => {
-    setStatus('anon');
-    render(<AuthLayout />);
-    expect(screen.getByText('join/[token]')).toBeOnTheScreen();
   });
 });

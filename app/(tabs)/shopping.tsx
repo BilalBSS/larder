@@ -30,7 +30,7 @@ export default function ShoppingScreen() {
 
   if (householdId === null) {
     return (
-      <Screen className="items-center justify-center px-8">
+      <Screen edges={['top']} className="items-center justify-center px-8">
         <Text variant="title" className="text-center">
           No household yet.
         </Text>
@@ -48,11 +48,11 @@ export default function ShoppingScreen() {
   const peopleLabel = contributors === 1 ? '1 person' : `${contributors} people`;
 
   return (
-    <Screen>
+    <Screen edges={['top']}>
       <TopBar
         title="Shopping"
         eyebrow={isEmpty ? 'Live' : `Live · ${peopleLabel}`}
-        {...(isEmpty ? {} : { sub: `${remaining} of ${items.length} to grab` })}
+        sub={isEmpty ? 'Nothing to grab yet' : `${remaining} of ${items.length} to grab`}
         trailing={
           <>
             <Pill>

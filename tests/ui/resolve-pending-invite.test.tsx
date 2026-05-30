@@ -1,4 +1,4 @@
-import { makeResolvePendingInvite } from '@/app/(auth)/resolve-pending-invite';
+import { makeResolvePendingInvite } from '@/src/shell/resolve-pending-invite';
 
 function deps(token: string | null) {
   return {

@@ -4,10 +4,11 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
+import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import '../global.css';
 
-import { resolvePendingInvite } from '@/app/(auth)/resolve-pending-invite';
-import { resolveGate } from '@/app/resolve-gate';
+import { resolveGate } from '@/src/shell/resolve-gate';
+import { resolvePendingInvite } from '@/src/shell/resolve-pending-invite';
 import { makeLoadAuthUser } from '@domain/use-cases/auth/load-current-user';
 import { supabase } from '@foundation/auth/supabase';
 import { AppContextProvider, useAuthStatus, useUser } from '@foundation/context';
@@ -23,12 +24,14 @@ export default function RootLayout() {
   const { fontsLoaded } = useAppFonts();
 
   return (
-    <AppContextProvider loadAuthUser={loadAuthUser} resolvePendingInvite={resolvePendingInvite}>
-      <ThemeProvider value={DefaultTheme}>
-        <RootNavigator fontsLoaded={fontsLoaded} />
-        <StatusBar style="auto" />
-      </ThemeProvider>
-    </AppContextProvider>
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <AppContextProvider loadAuthUser={loadAuthUser} resolvePendingInvite={resolvePendingInvite}>
+        <ThemeProvider value={DefaultTheme}>
+          <RootNavigator fontsLoaded={fontsLoaded} />
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      </AppContextProvider>
+    </SafeAreaProvider>
   );
 }
 
@@ -56,6 +59,7 @@ function RootNavigator({ fontsLoaded }: { readonly fontsLoaded: boolean }) {
       <Stack.Protected guard={gate !== 'tabs'}>
         <Stack.Screen name="(auth)" />
       </Stack.Protected>
+      <Stack.Screen name="join/[token]" />
     </Stack>
   );
 }

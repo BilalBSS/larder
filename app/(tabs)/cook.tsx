@@ -10,7 +10,7 @@ import { TopBar } from '@ui/TopBar';
 
 export default function CookScreen() {
   return (
-    <Screen>
+    <Screen edges={['top']}>
       <TopBar eyebrow="Tonight" title="Cook" sub="Recipes from what you have." />
       <View className="flex-1 items-center justify-center px-8">
         <Icon icon={CookingPot} accessibilityLabel="" size={32} color={TERRACOTTA} />

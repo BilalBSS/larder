@@ -2,6 +2,7 @@ import type React from 'react';
 import { View } from 'react-native';
 
 import { Eyebrow } from './Eyebrow';
+import { Logo } from './Logo';
 import { Text } from './Text';
 
 export interface TopBarProps {
@@ -16,7 +17,9 @@ export function TopBar({ title, eyebrow, sub, leading, trailing }: TopBarProps) 
   return (
     <View className="bg-paper px-4 pb-4 pt-2">
       <View className="h-9 flex-row items-center justify-between">
-        <View className="flex-row items-center gap-2">{leading}</View>
+        <View className="flex-row items-center gap-2">
+          {leading ?? <Logo wordmark size={22} />}
+        </View>
         <View className="flex-row items-center gap-2">{trailing}</View>
       </View>
       <View className="mt-1">

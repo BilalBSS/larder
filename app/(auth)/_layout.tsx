@@ -3,7 +3,7 @@ import { Stack } from 'expo-router';
 import { useAuthStatus } from '@foundation/context';
 
 export const unstable_settings = {
-  initialRouteName: 'sign-in',
+  initialRouteName: 'welcome',
 };
 
 export default function AuthLayout() {
@@ -12,11 +12,11 @@ export default function AuthLayout() {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="join/[token]" />
       <Stack.Protected guard={authed}>
         <Stack.Screen name="onboarding" />
       </Stack.Protected>
       <Stack.Protected guard={!authed}>
+        <Stack.Screen name="welcome" />
         <Stack.Screen name="sign-in" />
         <Stack.Screen name="sign-up" />
       </Stack.Protected>
