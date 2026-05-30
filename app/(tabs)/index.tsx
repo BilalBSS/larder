@@ -3,7 +3,6 @@ import { Camera, PencilLine } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { Button } from '@ui/Button';
-import { Logo } from '@ui/Logo';
 import { Screen } from '@ui/Screen';
 import { Text } from '@ui/Text';
 import { TopBar } from '@ui/TopBar';
@@ -11,7 +10,7 @@ import { TopBar } from '@ui/TopBar';
 export default function PantryScreen() {
   return (
     <Screen edges={['top']}>
-      <TopBar leading={<Logo wordmark size={22} />} eyebrow="Your kitchen" title="Pantry" />
+      <TopBar eyebrow="Your kitchen" title="Pantry" sub="Nothing stocked yet." />
       <View className="flex-1 items-center justify-center px-8">
         <Text variant="display-lg" className="text-center">
           Let&apos;s stock the pantry.

@@ -52,7 +52,7 @@ export default function ShoppingScreen() {
       <TopBar
         title="Shopping"
         eyebrow={isEmpty ? 'Live' : `Live · ${peopleLabel}`}
-        {...(isEmpty ? {} : { sub: `${remaining} of ${items.length} to grab` })}
+        sub={isEmpty ? 'Nothing to grab yet' : `${remaining} of ${items.length} to grab`}
         trailing={
           <>
             <Pill>
