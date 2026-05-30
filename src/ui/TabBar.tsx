@@ -21,7 +21,10 @@ export interface TabBarProps {
 export function TabBar({ items, activeId, onSelect }: TabBarProps) {
   const insets = useSafeAreaInsets();
   return (
-    <View className="border-t border-hairline bg-surface" style={{ paddingBottom: insets.bottom }}>
+    <View
+      className="border-t border-hairline bg-surface"
+      style={{ paddingBottom: Math.max(insets.bottom - 16, 8) }}
+    >
       <View className="flex-row px-1" style={{ height: 60 }} accessibilityRole="tablist">
         {items.map((item) => {
           const active = item.id === activeId;
