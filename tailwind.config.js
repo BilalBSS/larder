@@ -41,6 +41,7 @@ module.exports = {
           'fresh-deep': '#2F4D29',
           frozen: '#5C6A78',
           'frozen-bg': '#DAE0E5',
+          'frozen-deep': '#3E4853',
           gone: '#9A8F82',
         },
         // / member avatars
