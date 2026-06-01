@@ -31,8 +31,10 @@ export interface ReceiptRow {
 }
 
 export interface ReceiptOcrUpdate {
+  readonly store_name: string | null;
   readonly total_amount: number;
   readonly tax_amount: number | null;
+  readonly purchased_at: string | null;
   readonly confidence: number;
   readonly line_items: readonly ServerOCRLineItem[];
 }
@@ -42,6 +44,11 @@ export interface ReceiptDb {
     readonly household_id: string;
     readonly user_id: string;
   }): Promise<boolean>;
+  resolveTier(user_id: string): Promise<string | null>;
+  receiptsThisMonth(input: {
+    readonly household_id: string;
+    readonly exclude_idempotency_key: string;
+  }): Promise<number>;
   insertReceipt(input: {
     readonly household_id: string;
     readonly idempotency_key: string;
@@ -94,6 +101,13 @@ export class ForbiddenHousehold extends Error {
   }
 }
 
+export class ReceiptCapExceeded extends Error {
+  constructor() {
+    super('receipt_cap_exceeded');
+    this.name = 'ReceiptCapExceeded';
+  }
+}
+
 export class RateLimited extends Error {
   readonly retryAfterSeconds: number;
   constructor(retryAfterSeconds: number) {
@@ -104,6 +118,8 @@ export class RateLimited extends Error {
 }
 
 const DEFAULT_STALLED_AFTER_MS = 5 * 60 * 1000;
+// / mirrors entitlements receipts_per_month
+const FREE_RECEIPTS_PER_MONTH = 8;
 
 export async function handle(
   deps: ReceiptOcrDeps,
@@ -129,6 +145,15 @@ export async function handle(
     user_id: ctx.user.id,
   });
   if (!member) throw new ForbiddenHousehold();
+
+  const tier = await deps.db.resolveTier(ctx.user.id);
+  if (tier === null || tier === 'free') {
+    const used = await deps.db.receiptsThisMonth({
+      household_id: req.household_id,
+      exclude_idempotency_key: idempotencyKey,
+    });
+    if (used >= FREE_RECEIPTS_PER_MONTH) throw new ReceiptCapExceeded();
+  }
 
   const insertResult = await idempotentInsert<ReceiptRow>({
     insert: () =>
@@ -187,8 +212,10 @@ export async function handle(
       { image_storage_key: req.image_storage_key },
     );
     await deps.db.updateReceiptResult(row.id, row.household_id, {
+      store_name: ocrResult.store_name,
       total_amount: ocrResult.total_amount,
       tax_amount: ocrResult.tax_amount,
+      purchased_at: ocrResult.purchased_at,
       confidence: ocrResult.confidence,
       line_items: ocrResult.line_items,
     });

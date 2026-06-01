@@ -6,6 +6,7 @@ import { Redis } from 'npm:@upstash/redis@1';
 import { makeRequestContext } from '../_shared/context.ts';
 import { AttestationFailed } from '../_shared/attestation.ts';
 import { makeServerLogger } from '../_shared/logger.ts';
+import { makeGeminiOcrProvider } from '../_shared/llm/gemini-ocr-provider.ts';
 import { mockOcrProvider } from '../_shared/llm/mock-providers.ts';
 import { SpendingCapExceeded, SpendingCapUnavailable } from '../_shared/spending-cap.ts';
 import {
@@ -13,6 +14,7 @@ import {
   handle,
   MissingIdempotencyKey,
   RateLimited,
+  ReceiptCapExceeded,
   type ReceiptOcrRequest,
 } from './handler.ts';
 
@@ -35,6 +37,9 @@ const ENVIRONMENT = Deno.env.get('ENVIRONMENT') ?? 'development';
 const ATTESTATION_ENFORCED = (Deno.env.get('ATTESTATION_ENFORCED') ?? 'false') === 'true';
 const ATTESTATION_ALLOW_DEV_STUB =
   (Deno.env.get('ATTESTATION_ALLOW_DEV_STUB') ?? 'true') === 'true';
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+const GEMINI_PRIMARY_MODEL = Deno.env.get('GEMINI_PRIMARY_MODEL') ?? 'gemini-flash-lite-latest';
+const GEMINI_FALLBACK_MODEL = Deno.env.get('GEMINI_FALLBACK_MODEL') ?? 'gemini-flash-latest';
 
 if (
   SUPABASE_URL === undefined ||
@@ -52,6 +57,23 @@ if (ENVIRONMENT === 'production' && ATTESTATION_ALLOW_DEV_STUB) {
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 const redis = new Redis({ url: UPSTASH_URL, token: UPSTASH_TOKEN });
 const baseLogger = makeServerLogger({ console }, { fn: 'receipt-ocr' });
+
+const receiptStorage = supabase.storage.from('receipts');
+const ocrChain =
+  GEMINI_API_KEY === undefined
+    ? [mockOcrProvider('mock-flash-lite'), mockOcrProvider('mock-flash')]
+    : [
+        makeGeminiOcrProvider({
+          apiKey: GEMINI_API_KEY,
+          model: GEMINI_PRIMARY_MODEL,
+          storage: receiptStorage,
+        }),
+        makeGeminiOcrProvider({
+          apiKey: GEMINI_API_KEY,
+          model: GEMINI_FALLBACK_MODEL,
+          storage: receiptStorage,
+        }),
+      ];
 
 Deno.serve(async (req) => {
   const logger = baseLogger;
@@ -76,6 +98,31 @@ Deno.serve(async (req) => {
               .maybeSingle();
             if (res.error) throw res.error;
             return res.data !== null;
+          },
+          async resolveTier(user_id) {
+            const res = await supabase
+              .from('subscriptions')
+              .select('tier')
+              .eq('user_id', user_id)
+              .maybeSingle();
+            if (res.error) throw res.error;
+            return res.data?.tier ?? null;
+          },
+          async receiptsThisMonth(input) {
+            const now = new Date();
+            const monthStart = new Date(
+              Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
+            ).toISOString();
+            const res = await supabase
+              .from('receipts')
+              .select('id', { count: 'exact', head: true })
+              .eq('household_id', input.household_id)
+              .is('deleted_at', null)
+              .gte('created_at', monthStart)
+              .neq('idempotency_key', input.exclude_idempotency_key);
+            if (res.error) throw res.error;
+            if (res.count === null) throw new Error('receipt_count_unavailable');
+            return res.count;
           },
           async insertReceipt(input) {
             const res = await supabase
@@ -118,17 +165,29 @@ Deno.serve(async (req) => {
               .from('receipts')
               .update({
                 ocr_status: 'succeeded',
+                store_name: result.store_name,
                 total_amount: result.total_amount,
                 tax_amount: result.tax_amount,
+                purchased_at: result.purchased_at ?? new Date().toISOString(),
                 ocr_confidence: result.confidence,
               })
               .eq('id', id);
             if (upd.error) throw upd.error;
             const del = await supabase.from('receipt_line_items').delete().eq('receipt_id', id);
             if (del.error) throw del.error;
-            const ins = await supabase
-              .from('receipt_line_items')
-              .insert(result.line_items.map((li) => ({ receipt_id: id, household_id, ...li })));
+            const ins = await supabase.from('receipt_line_items').insert(
+              result.line_items.map((li) => ({
+                receipt_id: id,
+                household_id,
+                raw_text: li.raw_text,
+                canonical_name: li.canonical_name,
+                category: li.category,
+                quantity: li.quantity,
+                unit: li.unit,
+                unit_price: li.unit_price,
+                line_total: li.line_total,
+              })),
+            );
             if (ins.error) throw ins.error;
           },
           async updateReceiptFailed(id) {
@@ -139,7 +198,7 @@ Deno.serve(async (req) => {
             if (res.error) throw res.error;
           },
         },
-        ocrChain: [mockOcrProvider('mock-flash-lite'), mockOcrProvider('mock-flash')],
+        ocrChain,
         spending: {
           redis,
           logger,
@@ -181,7 +240,7 @@ Deno.serve(async (req) => {
         },
       });
     }
-    if (err instanceof SpendingCapExceeded) {
+    if (err instanceof ReceiptCapExceeded || err instanceof SpendingCapExceeded) {
       return new Response(JSON.stringify({ error: err.message }), {
         status: 429,
         headers: { 'content-type': 'application/json' },

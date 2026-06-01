@@ -10,6 +10,7 @@ import {
   handle,
   MissingIdempotencyKey,
   RateLimited,
+  ReceiptCapExceeded,
   type ReceiptDb,
   type ReceiptOcrDeps,
   type ReceiptRow,
@@ -33,6 +34,8 @@ function makeDb(behavior: {
   insertResult: { data: ReceiptRow | null; error: { code?: string } | null };
   selectResult?: { data: ReceiptRow | null; error: unknown };
   isMember?: boolean;
+  tier?: string | null;
+  receiptsThisMonth?: number;
 }): ReceiptDb & {
   isHouseholdMember: ReturnType<typeof vi.fn>;
   insertReceipt: ReturnType<typeof vi.fn>;
@@ -44,6 +47,8 @@ function makeDb(behavior: {
   const updateReceiptFailed = vi.fn().mockResolvedValue(undefined);
   return {
     isHouseholdMember: vi.fn().mockResolvedValue(behavior.isMember ?? true),
+    resolveTier: vi.fn().mockResolvedValue(behavior.tier ?? null),
+    receiptsThisMonth: vi.fn().mockResolvedValue(behavior.receiptsThisMonth ?? 0),
     insertReceipt: vi.fn().mockResolvedValue(behavior.insertResult),
     selectByKey: vi.fn().mockResolvedValue(behavior.selectResult ?? { data: null, error: null }),
     claimStalled: vi.fn().mockResolvedValue(true),
@@ -201,6 +206,37 @@ describe('receipt-ocr handler', () => {
     await expect(handle(makeDeps({ db }), REQ)).rejects.toBeInstanceOf(ForbiddenHousehold);
     expect(db.insertReceipt).not.toHaveBeenCalled();
     expect(db.updateReceiptResult).not.toHaveBeenCalled();
+  });
+
+  it('rejects over the monthly receipt cap before any insert', async () => {
+    const db = makeDb({
+      insertResult: { data: makeRow(), error: null },
+      tier: 'free',
+      receiptsThisMonth: 8,
+    });
+    await expect(handle(makeDeps({ db }), REQ)).rejects.toBeInstanceOf(ReceiptCapExceeded);
+    expect(db.insertReceipt).not.toHaveBeenCalled();
+    expect(db.updateReceiptResult).not.toHaveBeenCalled();
+  });
+
+  it('allows the eighth free scan at the boundary', async () => {
+    const db = makeDb({
+      insertResult: { data: makeRow(), error: null },
+      tier: 'free',
+      receiptsThisMonth: 7,
+    });
+    const result = await handle(makeDeps({ db }), REQ);
+    expect(result.status).toBe('succeeded');
+  });
+
+  it('lets a paid member scan past the free cap', async () => {
+    const db = makeDb({
+      insertResult: { data: makeRow(), error: null },
+      tier: 'solo_monthly',
+      receiptsThisMonth: 99,
+    });
+    const result = await handle(makeDeps({ db }), REQ);
+    expect(result.status).toBe('succeeded');
   });
 
   it('throws over cap and skips ocr without marking failed', async () => {
