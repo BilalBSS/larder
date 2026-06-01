@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: false,
+    env: { TZ: 'Asia/Kolkata' },
     include: [
       'tests/unit/**/*.test.ts',
       'tests/integration/**/*.test.ts',

@@ -16,9 +16,7 @@ export interface ShoppingListItem {
   createdAt: string;
 }
 
-export function normalizeName(raw: string): string {
-  return raw.trim().replace(/\s+/g, ' ').toLowerCase();
-}
+export { normalizeName } from './normalize';
 
 export function ownerLabel(
   item: Pick<ShoppingListItem, 'ownerUserId'>,

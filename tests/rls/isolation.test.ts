@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { anonClient, rlsConfigured, setupFixture, type RlsFixture } from './setup';
+import { adminClient, anonClient, rlsConfigured, setupFixture, type RlsFixture } from './setup';
 
 const runRls = rlsConfigured() ? describe : describe.skip;
 
@@ -46,6 +46,62 @@ runRls('pantry_items isolation', () => {
       updated_by_user_id: f.a.user_id,
     });
     expect(res.error).not.toBeNull();
+  });
+
+  it('user A soft-deletes own item and it drops from reads', async () => {
+    const client = anonClient(f.a.jwt);
+    const inserted = await client
+      .from('pantry_items')
+      .insert({
+        household_id: f.a.household_id,
+        canonical_name: 'apples',
+        display_name: 'Apples',
+        category: 'produce',
+        quantity: 4,
+        unit: 'count',
+        created_by_user_id: f.a.user_id,
+        updated_by_user_id: f.a.user_id,
+      })
+      .select('id')
+      .single();
+    expect(inserted.error).toBeNull();
+    const id = (inserted.data as { id: string }).id;
+
+    const before = await client
+      .from('pantry_items')
+      .select('id', { count: 'exact', head: true })
+      .eq('household_id', f.a.household_id)
+      .is('deleted_at', null);
+    const removed = await client
+      .from('pantry_items')
+      .update({ deleted_at: new Date().toISOString(), updated_by_user_id: f.a.user_id })
+      .eq('id', id)
+      .eq('household_id', f.a.household_id);
+    expect(removed.error).toBeNull();
+    const after = await client
+      .from('pantry_items')
+      .select('id', { count: 'exact', head: true })
+      .eq('household_id', f.a.household_id)
+      .is('deleted_at', null);
+    expect((before.count ?? 0) - (after.count ?? 0)).toBe(1);
+  });
+
+  it('user A cannot soft-delete an item in user B household', async () => {
+    const admin = adminClient();
+    const seeded = await admin
+      .from('pantry_items')
+      .select('id')
+      .eq('household_id', f.b.household_id)
+      .is('deleted_at', null)
+      .limit(1)
+      .single();
+    const id = (seeded.data as { id: string }).id;
+    await anonClient(f.a.jwt)
+      .from('pantry_items')
+      .update({ deleted_at: new Date().toISOString(), updated_by_user_id: f.a.user_id })
+      .eq('id', id);
+    const still = await admin.from('pantry_items').select('deleted_at').eq('id', id).single();
+    expect((still.data as { deleted_at: string | null }).deleted_at).toBeNull();
   });
 });
 

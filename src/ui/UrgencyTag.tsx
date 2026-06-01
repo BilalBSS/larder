@@ -1,6 +1,8 @@
 import { Text } from 'react-native';
 
-export type UrgencyTone = 'urgent' | 'soon' | 'fresh' | 'frozen' | 'gone';
+import type { UrgencyTone } from '@domain/entities/pantry-expiry';
+
+export type { UrgencyTone };
 
 export interface UrgencyTagProps {
   readonly tone: UrgencyTone;

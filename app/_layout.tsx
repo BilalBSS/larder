@@ -60,6 +60,7 @@ function RootNavigator({ fontsLoaded }: { readonly fontsLoaded: boolean }) {
         <Stack.Screen name="(auth)" />
       </Stack.Protected>
       <Stack.Screen name="join/[token]" />
+      <Stack.Screen name="add-item" options={{ presentation: 'modal' }} />
     </Stack>
   );
 }

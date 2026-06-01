@@ -78,7 +78,7 @@ const toneClass: Record<TextTone, string> = {
   urgent: 'text-urgency-urgent-deep',
   soon: 'text-urgency-soon-deep',
   fresh: 'text-urgency-fresh-deep',
-  frozen: 'text-urgency-frozen',
+  frozen: 'text-urgency-frozen-deep',
 };
 
 export function Text({

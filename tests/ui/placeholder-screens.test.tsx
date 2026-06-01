@@ -1,6 +1,5 @@
 import { render, screen } from '@testing-library/react-native';
 
-import PantryScreen from '@/app/(tabs)/index';
 import CookScreen from '@/app/(tabs)/cook';
 import SpendingScreen from '@/app/(tabs)/spending';
 import YouScreen from '@/app/(tabs)/you';
@@ -12,16 +11,6 @@ const mockUseUser = useUser as jest.Mock;
 
 beforeEach(() => {
   jest.clearAllMocks();
-});
-
-describe('PantryScreen', () => {
-  it('renders the first-run empty state', () => {
-    render(<PantryScreen />);
-    expect(screen.getByText("Let's stock the pantry.")).toBeOnTheScreen();
-    expect(screen.getByText('Snap a receipt to start.')).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: 'Scan a receipt' })).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: 'Add by hand' })).toBeOnTheScreen();
-  });
 });
 
 describe('CookScreen', () => {
