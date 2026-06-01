@@ -159,7 +159,10 @@ describe('removePantryItem', () => {
 describe('lookupCanonical', () => {
   it('delegates to the canonical repository', async () => {
     const match = { canonicalName: 'bananas', category: 'produce', defaultExpirationDays: 7 };
-    const repo: CanonicalIngredientRepository = { lookup: vi.fn(async () => match) };
+    const repo: CanonicalIngredientRepository = {
+      lookup: vi.fn(async () => match),
+      lookupMany: vi.fn(async () => new Map()),
+    };
     expect(await lookupCanonical(repo, 'bananas')).toBe(match);
     expect(repo.lookup).toHaveBeenCalledWith('bananas');
   });

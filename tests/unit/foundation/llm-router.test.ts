@@ -18,7 +18,7 @@ function makeDeps(entitlements: Entitlements = ENTITLEMENTS.solo_monthly) {
   return { deps, invoke };
 }
 
-const OCR_REQ: ReceiptOCRRequest = { image_storage_key: 'k', expected_format: 'us_receipt' };
+const OCR_REQ: ReceiptOCRRequest = { image_storage_key: 'k', household_id: 'h-1' };
 const RECIPE_REQ: RecipeGenerationRequest = {
   pantry_state: { items: [], expiring_soon: [] },
   dietary_preferences: [],

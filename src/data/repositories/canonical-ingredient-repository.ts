@@ -6,6 +6,7 @@ import { normalizeName } from '@domain/entities/normalize';
 
 export interface CanonicalIngredientRepository {
   lookup(name: string): Promise<CanonicalMatch | null>;
+  lookupMany(names: string[]): Promise<Map<string, CanonicalMatch>>;
 }
 
 export interface CanonicalIngredientRepositoryDeps {
@@ -41,6 +42,22 @@ export function makeCanonicalIngredientRepository(
       if (synonymRow !== undefined) return rowToMatch(parseRow(synonymRow));
 
       return null;
+    },
+
+    async lookupMany(names) {
+      const normalized = [...new Set(names.map(normalizeName).filter((name) => name !== ''))];
+      if (normalized.length === 0) return new Map();
+      const { data, error } = await deps.supabase
+        .from('canonical_ingredients')
+        .select(COLUMNS)
+        .in('canonical_name', normalized);
+      if (error !== null) throw error;
+      const matches = new Map<string, CanonicalMatch>();
+      for (const row of (data ?? []) as unknown[]) {
+        const match = rowToMatch(parseRow(row));
+        matches.set(match.canonicalName, match);
+      }
+      return matches;
     },
   };
 }

@@ -5,7 +5,7 @@ import type { Entitlements } from '../billing/entitlements';
 
 import type {
   ReceiptOCRRequest,
-  ReceiptOCRResult,
+  ReceiptOCRResponse,
   RecipeGenerationRequest,
   RecipeGenerationResult,
 } from './types';
@@ -25,7 +25,7 @@ export class EntitlementBlocked extends Error {
 }
 
 export interface ClientLlmRouter {
-  ocr(req: ReceiptOCRRequest, idempotencyKey: string): Promise<ReceiptOCRResult>;
+  ocr(req: ReceiptOCRRequest, idempotencyKey: string): Promise<ReceiptOCRResponse>;
   recipes(req: RecipeGenerationRequest): Promise<RecipeGenerationResult>;
   creative(req: RecipeGenerationRequest): Promise<RecipeGenerationResult>;
 }
@@ -33,7 +33,7 @@ export interface ClientLlmRouter {
 export function makeClientLlmRouter(deps: ClientLlmDeps): ClientLlmRouter {
   return {
     async ocr(req, idempotencyKey) {
-      return invoke<ReceiptOCRResult, ReceiptOCRRequest>(deps, 'receipt-ocr', req, {
+      return invoke<ReceiptOCRResponse, ReceiptOCRRequest>(deps, 'receipt-ocr', req, {
         'Idempotency-Key': idempotencyKey,
       });
     },

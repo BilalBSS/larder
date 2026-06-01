@@ -11,10 +11,11 @@ interface Result {
 interface Calls {
   eq: unknown[][];
   contains: unknown[][];
+  in: unknown[][];
 }
 
 function stubSupabase(queue: Result[]) {
-  const calls: Calls = { eq: [], contains: [] };
+  const calls: Calls = { eq: [], contains: [], in: [] };
   let index = 0;
   const builder = {
     select: () => builder,
@@ -24,6 +25,10 @@ function stubSupabase(queue: Result[]) {
     },
     contains: (...args: unknown[]) => {
       calls.contains.push(args);
+      return builder;
+    },
+    in: (...args: unknown[]) => {
+      calls.in.push(args);
       return builder;
     },
     limit: () => builder,
@@ -96,5 +101,42 @@ describe('canonicalIngredientRepository.lookup', () => {
     const { supabase } = stubSupabase([{ data: null, error: { message: 'boom' } }]);
     const repo = makeCanonicalIngredientRepository({ supabase });
     await expect(repo.lookup('bananas')).rejects.toEqual({ message: 'boom' });
+  });
+});
+
+describe('canonicalIngredientRepository.lookupMany', () => {
+  it('batches a single query keyed by canonical name', async () => {
+    const { supabase, calls } = stubSupabase([
+      {
+        data: [
+          { canonical_name: 'milk', category: 'dairy', default_expiration_days: 7 },
+          { canonical_name: 'eggs', category: 'dairy', default_expiration_days: 21 },
+        ],
+        error: null,
+      },
+    ]);
+    const repo = makeCanonicalIngredientRepository({ supabase });
+    const matches = await repo.lookupMany(['Milk', 'EGGS', 'unknown']);
+    expect(calls.in).toContainEqual(['canonical_name', ['milk', 'eggs', 'unknown']]);
+    expect(matches.get('milk')).toEqual({
+      canonicalName: 'milk',
+      category: 'dairy',
+      defaultExpirationDays: 7,
+    });
+    expect(matches.get('eggs')?.category).toBe('dairy');
+    expect(matches.has('unknown')).toBe(false);
+  });
+
+  it('returns an empty map without querying for blank names', async () => {
+    const { supabase, calls } = stubSupabase([]);
+    const repo = makeCanonicalIngredientRepository({ supabase });
+    expect((await repo.lookupMany(['  ', ''])).size).toBe(0);
+    expect(calls.in).toHaveLength(0);
+  });
+
+  it('throws when the batch query errors', async () => {
+    const { supabase } = stubSupabase([{ data: null, error: { message: 'boom' } }]);
+    const repo = makeCanonicalIngredientRepository({ supabase });
+    await expect(repo.lookupMany(['milk'])).rejects.toEqual({ message: 'boom' });
   });
 });
