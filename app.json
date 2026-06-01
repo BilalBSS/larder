@@ -42,7 +42,12 @@
         }
       ],
       "@sentry/react-native",
-      "expo-font"
+      "expo-font",
+      ["expo-camera", { "cameraPermission": "Larder uses the camera to scan your receipts." }],
+      [
+        "expo-image-picker",
+        { "photosPermission": "Larder reads photos so you can pick a receipt to scan." }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

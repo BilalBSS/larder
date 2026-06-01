@@ -126,7 +126,7 @@ export default function PantryScreen() {
           </Card>
         )}
       </ScrollView>
-      <FAB icon={Plus} onPress={goAdd} accessibilityLabel="Add item" />
+      <FAB onPress={() => router.push('/add')} accessibilityLabel="Add to pantry" />
     </Screen>
   );
 }

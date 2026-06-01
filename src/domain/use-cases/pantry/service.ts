@@ -14,7 +14,7 @@ import type { Entitlements } from '@foundation/billing/entitlements';
 import { addPantryItem } from './add';
 import { getPantryItem } from './get';
 import { listPantry } from './list';
-import { lookupCanonical } from './lookup';
+import { lookupCanonical, lookupManyCanonical } from './lookup';
 import { removePantryItem } from './remove';
 import { updatePantryItem } from './update';
 
@@ -25,6 +25,7 @@ export interface PantryService {
   update(input: UpdatePantryItemInput): Promise<void>;
   remove(input: RemovePantryItemInput): Promise<void>;
   lookup(name: string): Promise<CanonicalMatch | null>;
+  lookupMany(names: string[]): Promise<Map<string, CanonicalMatch>>;
 }
 
 const repo = makePantryRepository({ supabase });
@@ -37,4 +38,5 @@ export const pantryService: PantryService = {
   update: (input) => updatePantryItem(repo, input),
   remove: (input) => removePantryItem(repo, input),
   lookup: (name) => lookupCanonical(canonicalRepo, name),
+  lookupMany: (names) => lookupManyCanonical(canonicalRepo, names),
 };

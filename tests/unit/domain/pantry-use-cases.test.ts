@@ -7,6 +7,7 @@ import {
   getPantryItem,
   listPantry,
   lookupCanonical,
+  lookupManyCanonical,
   PantryCapError,
   removePantryItem,
   updatePantryItem,
@@ -165,5 +166,17 @@ describe('lookupCanonical', () => {
     };
     expect(await lookupCanonical(repo, 'bananas')).toBe(match);
     expect(repo.lookup).toHaveBeenCalledWith('bananas');
+  });
+});
+
+describe('lookupManyCanonical', () => {
+  it('delegates the batch lookup to the canonical repository', async () => {
+    const matches = new Map([
+      ['milk', { canonicalName: 'milk', category: 'dairy', defaultExpirationDays: 7 }],
+    ]);
+    const lookupMany = vi.fn(async () => matches);
+    const repo: CanonicalIngredientRepository = { lookup: vi.fn(async () => null), lookupMany };
+    expect(await lookupManyCanonical(repo, ['milk'])).toBe(matches);
+    expect(lookupMany).toHaveBeenCalledWith(['milk']);
   });
 });

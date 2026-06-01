@@ -81,6 +81,17 @@ function RootNavigator({ fontsLoaded }: { readonly fontsLoaded: boolean }) {
           contentStyle: { backgroundColor: '#FFFCF4' },
         }}
       />
+      <Stack.Screen
+        name="add"
+        options={{
+          presentation: 'formSheet',
+          sheetGrabberVisible: true,
+          sheetCornerRadius: 20,
+          sheetAllowedDetents: 'fitToContents',
+          contentStyle: { backgroundColor: '#FFFCF4' },
+        }}
+      />
+      <Stack.Screen name="scan" options={{ presentation: 'modal' }} />
     </Stack>
   );
 }
