@@ -48,9 +48,9 @@ runRls('pantry_items isolation', () => {
     expect(res.error).not.toBeNull();
   });
 
-  it('user A soft-deletes own item and it drops from reads', async () => {
-    const client = anonClient(f.a.jwt);
-    const inserted = await client
+  it('soft-deleted items are hidden from member reads', async () => {
+    const admin = adminClient();
+    const inserted = await admin
       .from('pantry_items')
       .insert({
         household_id: f.a.household_id,
@@ -67,18 +67,23 @@ runRls('pantry_items isolation', () => {
     expect(inserted.error).toBeNull();
     const id = (inserted.data as { id: string }).id;
 
-    const before = await client
+    const before = await anonClient(f.a.jwt)
       .from('pantry_items')
       .select('id', { count: 'exact', head: true })
       .eq('household_id', f.a.household_id)
       .is('deleted_at', null);
-    const removed = await client
+    expect(before.error).toBeNull();
+
+    const removed = await admin
       .from('pantry_items')
-      .update({ deleted_at: new Date().toISOString(), updated_by_user_id: f.a.user_id })
-      .eq('id', id)
-      .eq('household_id', f.a.household_id);
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', id);
     expect(removed.error).toBeNull();
-    const after = await client
+
+    const visible = await anonClient(f.a.jwt).from('pantry_items').select('id').eq('id', id);
+    expect(visible.data).toEqual([]);
+
+    const after = await anonClient(f.a.jwt)
       .from('pantry_items')
       .select('id', { count: 'exact', head: true })
       .eq('household_id', f.a.household_id)
