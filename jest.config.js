@@ -28,6 +28,7 @@ module.exports = {
     'app/\\(auth\\)/**/*.{ts,tsx}',
     'app/\\(tabs\\)/**/*.tsx',
     'app/add-item.tsx',
+    'app/item/**/*.tsx',
     'app/join/**/*.tsx',
     'src/shell/**/*.{ts,tsx}',
     '!**/index.ts',

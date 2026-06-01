@@ -20,6 +20,14 @@ export interface AddPantryItemInput {
   isFrozen?: boolean;
 }
 
+export interface UpdatePantryItemInput {
+  id: string;
+  householdId: string;
+  userId: string;
+  quantity?: number;
+  isFrozen?: boolean;
+}
+
 export interface RemovePantryItemInput {
   id: string;
   householdId: string;
@@ -28,8 +36,10 @@ export interface RemovePantryItemInput {
 
 export interface PantryRepository {
   list(householdId: string): Promise<PantryItem[]>;
+  get(id: string, householdId: string): Promise<PantryItem | null>;
   count(householdId: string): Promise<number>;
   add(input: AddPantryItemInput): Promise<void>;
+  update(input: UpdatePantryItemInput): Promise<void>;
   remove(input: RemovePantryItemInput): Promise<void>;
 }
 
@@ -50,6 +60,19 @@ export function makePantryRepository(deps: PantryRepositoryDeps): PantryReposito
       if (error !== null) throw error;
       const rows = (data ?? []) as unknown[];
       return rows.map((row) => rowToEntity(parseRow(row)));
+    },
+
+    async get(id, householdId) {
+      const { data, error } = await deps.supabase
+        .from('pantry_items')
+        .select('*')
+        .eq('id', id)
+        .eq('household_id', householdId)
+        .is('deleted_at', null)
+        .maybeSingle();
+      if (error !== null) throw error;
+      if (data === null) return null;
+      return rowToEntity(parseRow(data));
     },
 
     async count(householdId) {
@@ -81,6 +104,19 @@ export function makePantryRepository(deps: PantryRepositoryDeps): PantryReposito
         updated_by_user_id: input.userId,
       };
       const { error } = await deps.supabase.from('pantry_items').insert(row);
+      if (error !== null) throw error;
+    },
+
+    async update(input) {
+      const patch: Record<string, unknown> = { updated_by_user_id: input.userId };
+      if (input.quantity !== undefined) patch['quantity'] = input.quantity;
+      if (input.isFrozen !== undefined) patch['is_frozen'] = input.isFrozen;
+      const { error } = await deps.supabase
+        .from('pantry_items')
+        .update(patch)
+        .eq('id', input.id)
+        .eq('household_id', input.householdId)
+        .is('deleted_at', null);
       if (error !== null) throw error;
     },
 

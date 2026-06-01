@@ -30,11 +30,12 @@ const caption: Record<UrgencyTone, string> = {
 export interface PantryRowProps {
   readonly item: PantryItem;
   readonly now: Date;
+  readonly onPress?: (item: PantryItem) => void;
   readonly onRemove?: (item: PantryItem) => void;
   readonly last?: boolean;
 }
 
-export function PantryRow({ item, now, onRemove, last = false }: PantryRowProps) {
+export function PantryRow({ item, now, onPress, onRemove, last = false }: PantryRowProps) {
   const tone = groupingTone(item, now);
   const days = daysLeft(item, now);
 
@@ -48,6 +49,7 @@ export function PantryRow({ item, now, onRemove, last = false }: PantryRowProps)
 
   return (
     <Pressable
+      onPress={onPress !== undefined ? () => onPress(item) : undefined}
       onLongPress={onRemove !== undefined ? confirmRemove : undefined}
       accessibilityLabel={composeLabel(item, days)}
       className={`flex-row items-center gap-2 px-3 py-3 ${last ? '' : 'border-b border-hairline'}`}

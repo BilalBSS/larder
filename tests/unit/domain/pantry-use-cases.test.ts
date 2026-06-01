@@ -4,18 +4,22 @@ import type { CanonicalIngredientRepository } from '@data/repositories/canonical
 import type { PantryRepository } from '@data/repositories/pantry-repository';
 import {
   addPantryItem,
+  getPantryItem,
   listPantry,
   lookupCanonical,
   PantryCapError,
   removePantryItem,
+  updatePantryItem,
 } from '@domain/use-cases/pantry';
 import { ENTITLEMENTS } from '@foundation/billing/entitlements';
 
 function fakeRepo(overrides: Partial<PantryRepository> = {}): PantryRepository {
   return {
     list: async () => [],
+    get: async () => null,
     count: async () => 0,
     add: async () => undefined,
+    update: async () => undefined,
     remove: async () => undefined,
     ...overrides,
   };
@@ -91,6 +95,48 @@ describe('addPantryItem', () => {
     await expect(
       addPantryItem(fakeRepo(), { ...baseInput, unit: '  ' }, ENTITLEMENTS.free),
     ).rejects.toThrow('empty_unit');
+  });
+});
+
+describe('getPantryItem', () => {
+  it('delegates to the repository', async () => {
+    const found = { id: 'i-1' } as Awaited<ReturnType<PantryRepository['get']>>;
+    const get = vi.fn(async () => found);
+    expect(await getPantryItem(fakeRepo({ get }), 'i-1', 'h-1')).toBe(found);
+    expect(get).toHaveBeenCalledWith('i-1', 'h-1');
+  });
+});
+
+describe('updatePantryItem', () => {
+  it('forwards the update input', async () => {
+    const update = vi.fn(async () => undefined);
+    const input = { id: 'i-1', householdId: 'h-1', userId: 'u-1', quantity: 3, isFrozen: true };
+    await updatePantryItem(fakeRepo({ update }), input);
+    expect(update).toHaveBeenCalledWith(input);
+  });
+
+  it('rejects a negative quantity', async () => {
+    const update = vi.fn(async () => undefined);
+    await expect(
+      updatePantryItem(fakeRepo({ update }), {
+        id: 'i-1',
+        householdId: 'h-1',
+        userId: 'u-1',
+        quantity: -1,
+      }),
+    ).rejects.toThrow('invalid_quantity');
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('allows a freeze-only update', async () => {
+    const update = vi.fn(async () => undefined);
+    await updatePantryItem(fakeRepo({ update }), {
+      id: 'i-1',
+      householdId: 'h-1',
+      userId: 'u-1',
+      isFrozen: true,
+    });
+    expect(update).toHaveBeenCalledTimes(1);
   });
 });
 

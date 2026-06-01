@@ -116,6 +116,7 @@ export default function PantryScreen() {
                     key={item.id}
                     item={item}
                     now={loadedAt}
+                    onPress={(target) => router.push(`/item/${target.id}`)}
                     onRemove={remove}
                     last={itemIndex === section.items.length - 1}
                   />
