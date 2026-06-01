@@ -159,6 +159,52 @@ describe('makeGeminiOcrProvider', () => {
     });
     await expect(provider.ocr({ image_storage_key: 'h/r.jpg' })).rejects.toThrow('gemini_http_500');
   });
+
+  it('sends the structured-output schema and the image', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(geminiResponse(goodReceipt));
+    const provider = makeGeminiOcrProvider({
+      apiKey: 'k',
+      model: 'm',
+      storage: storageWith(blob([1])),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+    });
+    await provider.ocr({ image_storage_key: 'h/r.jpg' });
+    const [url, init] = fetchMock.mock.calls[0] as [string, { body: string }];
+    const body = JSON.parse(init.body);
+    expect(url).toContain(':generateContent');
+    expect(body.generationConfig.responseMimeType).toBe('application/json');
+    expect(body.generationConfig.responseSchema).toBeDefined();
+    expect(body.contents[0].parts[0].inline_data.mime_type).toBe('image/jpeg');
+  });
+
+  it('throws when gemini returns no text', async () => {
+    const provider = makeGeminiOcrProvider({
+      apiKey: 'k',
+      model: 'm',
+      storage: storageWith(blob([1])),
+      fetchImpl: fetchReturning({
+        ok: true,
+        status: 200,
+        json: async () => ({ candidates: [{ content: { parts: [{}] } }] }),
+      }),
+    });
+    await expect(provider.ocr({ image_storage_key: 'h/r.jpg' })).rejects.toThrow(
+      'gemini_empty_response',
+    );
+  });
+
+  it('clamps confidence low when there are no line items', async () => {
+    const provider = makeGeminiOcrProvider({
+      apiKey: 'k',
+      model: 'm',
+      storage: storageWith(blob([1])),
+      fetchImpl: fetchReturning(
+        geminiResponse({ ...goodReceipt, line_items: [], total_amount: 0 }),
+      ),
+    });
+    const result = await provider.ocr({ image_storage_key: 'h/r.jpg' });
+    expect(result.confidence).toBeLessThanOrEqual(0.3);
+  });
 });
 
 // / accuracy measurement, gemini mocked

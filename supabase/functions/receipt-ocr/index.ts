@@ -119,6 +119,7 @@ Deno.serve(async (req) => {
               .eq('household_id', input.household_id)
               .is('deleted_at', null)
               .gte('created_at', monthStart)
+              .neq('ocr_status', 'failed')
               .neq('idempotency_key', input.exclude_idempotency_key);
             if (res.error) throw res.error;
             if (res.count === null) throw new Error('receipt_count_unavailable');

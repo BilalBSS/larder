@@ -84,9 +84,14 @@ export function ScanCapture({ onCaptured }: ScanCaptureProps) {
             borderRadius: 12,
           }}
         />
-        <Text variant="body" tone="inverse" className="mt-4">
-          Aim at a flat receipt
-        </Text>
+        <View
+          className="mt-4 rounded-pill px-3 py-1"
+          style={{ backgroundColor: 'rgba(28,24,20,0.55)' }}
+        >
+          <Text variant="body" tone="inverse">
+            Aim at a flat receipt
+          </Text>
+        </View>
       </View>
       <View className="absolute inset-x-0 bottom-0 gap-2 px-6 pb-10">
         <Button

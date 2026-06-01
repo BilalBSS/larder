@@ -20,6 +20,7 @@ import { updatePantryItem } from './update';
 
 export interface PantryService {
   list(householdId: string): Promise<PantryItem[]>;
+  count(householdId: string): Promise<number>;
   get(id: string, householdId: string): Promise<PantryItem | null>;
   add(input: AddPantryItemInput, entitlements: Entitlements): Promise<void>;
   update(input: UpdatePantryItemInput): Promise<void>;
@@ -33,6 +34,7 @@ const canonicalRepo = makeCanonicalIngredientRepository({ supabase });
 
 export const pantryService: PantryService = {
   list: (householdId) => listPantry(repo, householdId),
+  count: (householdId) => repo.count(householdId),
   get: (id, householdId) => getPantryItem(repo, id, householdId),
   add: (input, entitlements) => addPantryItem(repo, input, entitlements),
   update: (input) => updatePantryItem(repo, input),

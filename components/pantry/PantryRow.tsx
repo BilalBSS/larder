@@ -4,6 +4,7 @@ import { Alert, Pressable, View } from 'react-native';
 
 import { daysLeft, groupingTone, type UrgencyTone } from '@domain/entities/pantry-expiry';
 import type { PantryItem } from '@domain/entities/pantry-item';
+import { currencyGlyph, useCurrency } from '@foundation/currency';
 import { Avatar } from '@ui/Avatar';
 import { Icon } from '@ui/Icon';
 import { Money } from '@ui/Money';
@@ -38,6 +39,7 @@ export interface PantryRowProps {
 export function PantryRow({ item, now, onPress, onRemove, last = false }: PantryRowProps) {
   const tone = groupingTone(item, now);
   const days = daysLeft(item, now);
+  const glyph = currencyGlyph(useCurrency());
 
   function confirmRemove(): void {
     if (onRemove === undefined) return;
@@ -51,7 +53,7 @@ export function PantryRow({ item, now, onPress, onRemove, last = false }: Pantry
     <Pressable
       onPress={onPress !== undefined ? () => onPress(item) : undefined}
       onLongPress={onRemove !== undefined ? confirmRemove : undefined}
-      accessibilityLabel={composeLabel(item, days)}
+      accessibilityLabel={composeLabel(item, days, glyph)}
       className={`flex-row items-center gap-2 px-3 py-3 ${last ? '' : 'border-b border-hairline'}`}
     >
       <View className="w-[14px] items-center">
@@ -113,9 +115,9 @@ function formatDays(days: number | null): string {
   return days === null ? '—' : `${days}d`;
 }
 
-function composeLabel(item: PantryItem, days: number | null): string {
+function composeLabel(item: PantryItem, days: number | null, glyph: string): string {
   const quantity = `${formatQuantity(item.quantity)} ${item.unit}`;
-  const value = item.lastUnitCost !== null ? `£${item.lastUnitCost.toFixed(2)}` : 'no price';
+  const value = item.lastUnitCost !== null ? `${glyph}${item.lastUnitCost.toFixed(2)}` : 'no price';
   return `${item.displayName}, ${quantity}, ${expiryPhrase(item, days)}, ${value}`;
 }
 

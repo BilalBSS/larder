@@ -1,7 +1,7 @@
 // / receipt scan flow
 import { X } from 'lucide-react-native';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { router } from 'expo-router';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,7 +15,7 @@ import { normalizeName } from '@domain/entities/normalize';
 import type { ReconcileLine } from '@domain/use-cases/receipt';
 import { receiptService } from '@domain/use-cases/receipt/service';
 import { pantryService } from '@domain/use-cases/pantry/service';
-import { useAppContext, useUser } from '@foundation/context';
+import { useAppContext, useEntitlements, useUser } from '@foundation/context';
 import { clientRequestId } from '@/src/shell/client-request-id';
 import { IconButton } from '@ui/IconButton';
 
@@ -40,6 +40,7 @@ const SLOW_AFTER_MS = 10_000;
 export default function ScanScreen() {
   const user = useUser();
   const { supabase, llmRouter } = useAppContext();
+  const entitlements = useEntitlements();
   const insets = useSafeAreaInsets();
   const householdId = user?.household_id ?? null;
 
@@ -55,10 +56,18 @@ export default function ScanScreen() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [reconcileError, setReconcileError] = useState<string | null>(null);
+  const [pantryCount, setPantryCount] = useState(0);
 
   const slowTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastUriRef = useRef<string | null>(null);
   const requestIdRef = useRef<string | null>(null);
+
+  const overCapAddCount = useMemo<number | null>(() => {
+    const cap = entitlements.pantry_item_cap;
+    if (cap === 'unlimited') return null;
+    const remaining = cap - pantryCount;
+    return lines.length > remaining ? Math.max(0, remaining) : null;
+  }, [entitlements, pantryCount, lines]);
 
   const clearSlow = (): void => {
     if (slowTimer.current !== null) {
@@ -89,7 +98,7 @@ export default function ScanScreen() {
         const bytes = await file.arrayBuffer();
         const uploaded = await supabase.storage
           .from('receipts')
-          .upload(key, bytes, { contentType: 'image/jpeg', upsert: true });
+          .upload(key, bytes, { contentType: 'image/jpeg', upsert: false });
         if (uploaded.error !== null) throw uploaded.error;
         const ocr = await llmRouter.ocr(
           { image_storage_key: key, household_id: householdId },
@@ -102,7 +111,10 @@ export default function ScanScreen() {
           .map((line) => line.canonicalName)
           .filter((name): name is string => name !== null);
         const matches = await pantryService.lookupMany(canonicalNames);
+        const used =
+          entitlements.pantry_item_cap === 'unlimited' ? 0 : await pantryService.count(householdId);
         clearSlow();
+        setPantryCount(used);
         setReceiptId(ocr.receipt_id);
         setReceiptTotal(fetched.receipt.totalAmount);
         setStoreName(fetched.receipt.storeName);
@@ -113,7 +125,7 @@ export default function ScanScreen() {
         setProcessingState('failed');
       }
     },
-    [householdId, supabase, llmRouter],
+    [householdId, supabase, llmRouter, entitlements],
   );
 
   const retry = (): void => {
@@ -189,7 +201,7 @@ export default function ScanScreen() {
               lines={lines.map(toReconcileView)}
               total={receiptTotal}
               attributionUserId={user?.id ?? ''}
-              overCapAddCount={null}
+              overCapAddCount={overCapAddCount}
               submitting={submitting}
               error={reconcileError}
               onChangeName={changeName}

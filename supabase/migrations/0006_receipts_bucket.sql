@@ -1,7 +1,7 @@
 -- private receipts storage bucket
 
-insert into storage.buckets (id, name, public)
-values ('receipts', 'receipts', false)
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('receipts', 'receipts', false, 5242880, array['image/jpeg'])
 on conflict (id) do nothing;
 
 -- members read/write objects under their household folder

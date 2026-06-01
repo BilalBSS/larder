@@ -2,6 +2,7 @@
 import { Pencil, Trash2 } from 'lucide-react-native';
 import { ScrollView, View } from 'react-native';
 
+import { currencyGlyph, useCurrency } from '@foundation/currency';
 import { Avatar } from '@ui/Avatar';
 import { Button } from '@ui/Button';
 import { Card } from '@ui/Card';
@@ -54,6 +55,7 @@ export function ScanReconcile({
   const canConfirm =
     lines.length > 0 && lines.every((line) => line.displayName.trim() !== '') && !submitting;
   const itemWord = lines.length === 1 ? 'item' : 'items';
+  const glyph = currencyGlyph(useCurrency());
 
   return (
     <View className="flex-1">
@@ -70,6 +72,7 @@ export function ScanReconcile({
               onChangeName={onChangeName}
               onSettleName={onSettleName}
               onDelete={onDelete}
+              glyph={glyph}
             />
           ))}
         </Card>
@@ -117,12 +120,14 @@ function Row({
   onChangeName,
   onSettleName,
   onDelete,
+  glyph,
 }: {
   readonly line: ScanReconcileLine;
   readonly last: boolean;
   readonly onChangeName: (key: string, name: string) => void;
   readonly onSettleName: (key: string) => void;
   readonly onDelete: (key: string) => void;
+  readonly glyph: string;
 }) {
   return (
     <View
@@ -132,7 +137,12 @@ function Row({
     >
       <View className="flex-row items-center gap-2">
         {line.recognised ? (
-          <Text variant="body-strong" className="flex-1" numberOfLines={1}>
+          <Text
+            variant="body-strong"
+            className="flex-1"
+            numberOfLines={1}
+            accessibilityLabel={lineLabel(line, glyph)}
+          >
             {line.displayName}
           </Text>
         ) : (
@@ -195,4 +205,9 @@ function banner(recognised: number, total: number, storeName: string | null): st
 
 function formatQty(quantity: number): string {
   return Number.isInteger(quantity) ? String(quantity) : String(Number(quantity.toFixed(2)));
+}
+
+function lineLabel(line: ScanReconcileLine, glyph: string): string {
+  const price = line.lastUnitCost !== null ? `${glyph}${line.lastUnitCost.toFixed(2)}` : 'no price';
+  return `${line.displayName}, ${formatQty(line.quantity)} ${line.unit}, ${price}, recognised`;
 }

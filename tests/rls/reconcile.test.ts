@@ -135,6 +135,7 @@ runRls('reconcile_receipt rpc', () => {
       p_items: items,
     });
     expect(second.error).not.toBeNull();
+    expect(String(second.error?.message ?? '')).toContain('already_reconciled');
   });
 
   it('denies reconciling another household receipt', async () => {
@@ -152,6 +153,7 @@ runRls('reconcile_receipt rpc', () => {
       ],
     });
     expect(res.error).not.toBeNull();
+    expect(String(res.error?.message ?? '')).toContain('forbidden');
   });
 
   it('partial-adds in receipt order at the free pantry cap', async () => {

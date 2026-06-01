@@ -162,4 +162,20 @@ describe('ScanReconcile', () => {
     fireEvent.press(screen.getByLabelText('Remove Milk'));
     expect(onDelete).toHaveBeenCalledWith('l1');
   });
+
+  it('shows the over-cap hint', () => {
+    render(
+      <ScanReconcile
+        storeName={null}
+        lines={[line()]}
+        total={1.5}
+        attributionUserId="u1"
+        overCapAddCount={3}
+        submitting={false}
+        error={null}
+        {...handlers}
+      />,
+    );
+    expect(screen.getByText(/3 will be added/)).toBeOnTheScreen();
+  });
 });

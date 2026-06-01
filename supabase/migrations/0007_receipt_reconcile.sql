@@ -29,6 +29,7 @@ begin
   if v_hh is null then raise exception 'receipt_not_found'; end if;
   if not is_household_member(v_hh) then raise exception 'forbidden'; end if;
   if v_reconciled is not null then raise exception 'already_reconciled'; end if;
+  if jsonb_array_length(p_items) > 200 then raise exception 'too_many_items'; end if;
 
   select tier into v_tier from subscriptions where user_id = auth.uid();
   -- mirrors entitlements pantry_item_cap
@@ -44,6 +45,11 @@ begin
     if v_cap is not null and v_remaining <= 0 then
       v_skipped := v_skipped + 1;
       continue;
+    end if;
+
+    if btrim(coalesce(v_item->>'canonical_name', '')) = ''
+       or btrim(coalesce(v_item->>'display_name', '')) = '' then
+      raise exception 'invalid_line';
     end if;
 
     insert into pantry_items (
@@ -88,7 +94,9 @@ begin
     if v_cap is not null then v_remaining := v_remaining - 1; end if;
   end loop;
 
-  update receipts set reconciled_at = now() where id = p_receipt_id;
+  if v_added > 0 then
+    update receipts set reconciled_at = now() where id = p_receipt_id;
+  end if;
   return jsonb_build_object('added', v_added, 'skipped', v_skipped);
 end;
 $$;
