@@ -29,6 +29,7 @@ module.exports = {
     'app/\\(tabs\\)/**/*.tsx',
     'app/add-item.tsx',
     'app/item/**/*.tsx',
+    'app/currency.tsx',
     'app/join/**/*.tsx',
     'src/shell/**/*.{ts,tsx}',
     '!**/index.ts',

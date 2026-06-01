@@ -6,6 +6,7 @@ import YouScreen from '@/app/(tabs)/you';
 import { useUser } from '@foundation/context';
 
 jest.mock('@foundation/context', () => ({ useUser: jest.fn() }));
+jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
 
 const mockUseUser = useUser as jest.Mock;
 
@@ -30,11 +31,12 @@ describe('SpendingScreen', () => {
 });
 
 describe('YouScreen', () => {
-  it('renders its placeholder empty state', () => {
+  it('renders the account header and currency row', () => {
     mockUseUser.mockReturnValue({ id: 'u-1', household_id: 'h-1', tier: 'free' });
     render(<YouScreen />);
     expect(screen.getByText('You')).toBeOnTheScreen();
-    expect(screen.getByText('Settings are coming soon.')).toBeOnTheScreen();
+    expect(screen.getByText('Currency')).toBeOnTheScreen();
+    expect(screen.getByText('GBP')).toBeOnTheScreen();
   });
 
   it('shows the signed-in household state', () => {

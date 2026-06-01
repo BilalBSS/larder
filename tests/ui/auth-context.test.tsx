@@ -52,7 +52,12 @@ function Probe() {
 }
 
 function userWith(household_id: string | null) {
-  return async (id: string): Promise<AuthUser> => ({ id, household_id, tier: 'free' });
+  return async (id: string): Promise<AuthUser> => ({
+    id,
+    household_id,
+    tier: 'free',
+    currency: 'GBP',
+  });
 }
 
 async function emit(event: string, value: unknown) {
@@ -111,7 +116,12 @@ describe('refreshUser', () => {
   it('flips household_id from null to a uuid', async () => {
     let household_id: string | null = null;
     const loadAuthUser = jest.fn(
-      async (id: string): Promise<AuthUser> => ({ id, household_id, tier: 'free' }),
+      async (id: string): Promise<AuthUser> => ({
+        id,
+        household_id,
+        tier: 'free',
+        currency: 'GBP',
+      }),
     );
     render(
       <AppContextProvider loadAuthUser={loadAuthUser}>
@@ -131,7 +141,7 @@ describe('refreshUser', () => {
     let shouldFail = false;
     const loadAuthUser = jest.fn(async (id: string): Promise<AuthUser> => {
       if (shouldFail) throw new Error('refresh failed');
-      return { id, household_id: 'h-1', tier: 'free' };
+      return { id, household_id: 'h-1', tier: 'free', currency: 'GBP' };
     });
     render(
       <AppContextProvider loadAuthUser={loadAuthUser}>
@@ -155,7 +165,7 @@ describe('pending invite resolution', () => {
     let household_id: string | null = null;
     const loadAuthUser = jest.fn(async (id: string): Promise<AuthUser> => {
       order.push('load');
-      return { id, household_id, tier: 'free' };
+      return { id, household_id, tier: 'free', currency: 'GBP' };
     });
     const resolvePendingInvite = jest.fn(async () => {
       order.push('resolve');
@@ -177,7 +187,12 @@ describe('pending invite resolution', () => {
 
   it('keeps the session when invite resolution throws', async () => {
     const loadAuthUser = jest.fn(
-      async (id: string): Promise<AuthUser> => ({ id, household_id: null, tier: 'free' }),
+      async (id: string): Promise<AuthUser> => ({
+        id,
+        household_id: null,
+        tier: 'free',
+        currency: 'GBP',
+      }),
     );
     const resolvePendingInvite = jest.fn(async () => {
       throw new Error('bad token');
@@ -220,7 +235,7 @@ describe('stale-session races', () => {
     await emit('SIGNED_IN', sessionFor('u-1'));
     await emit('SIGNED_OUT', null);
     await act(async () => {
-      pending.resolve({ id: 'u-1', household_id: 'h-1', tier: 'free' });
+      pending.resolve({ id: 'u-1', household_id: 'h-1', tier: 'free', currency: 'GBP' });
       await pending.promise;
     });
     expect(screen.getByTestId('status')).toHaveTextContent('anon');
@@ -242,8 +257,8 @@ describe('stale-session races', () => {
     await emit('SIGNED_IN', sessionFor('u-1'));
     await emit('SIGNED_IN', sessionFor('u-2'));
     await act(async () => {
-      loads['u-1']?.resolve({ id: 'u-1', household_id: 'h-1', tier: 'free' });
-      loads['u-2']?.resolve({ id: 'u-2', household_id: 'h-2', tier: 'free' });
+      loads['u-1']?.resolve({ id: 'u-1', household_id: 'h-1', tier: 'free', currency: 'GBP' });
+      loads['u-2']?.resolve({ id: 'u-2', household_id: 'h-2', tier: 'free', currency: 'GBP' });
       await Promise.resolve();
     });
     expect(screen.getByTestId('household')).toHaveTextContent('h-2');

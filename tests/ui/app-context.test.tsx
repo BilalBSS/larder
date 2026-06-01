@@ -38,7 +38,12 @@ function Probe() {
 
 function loader() {
   return jest.fn(
-    async (id: string): Promise<AuthUser> => ({ id, household_id: 'h-1', tier: 'free' }),
+    async (id: string): Promise<AuthUser> => ({
+      id,
+      household_id: 'h-1',
+      tier: 'free',
+      currency: 'GBP',
+    }),
   );
 }
 
@@ -126,7 +131,7 @@ describe('AppContextProvider auth lifecycle', () => {
     const loadAuthUser = jest.fn(
       (id: string) =>
         new Promise<AuthUser>((resolve) => {
-          resolvers[id] = () => resolve({ id, household_id: 'h-1', tier: 'free' });
+          resolvers[id] = () => resolve({ id, household_id: 'h-1', tier: 'free', currency: 'GBP' });
         }),
     );
     render(

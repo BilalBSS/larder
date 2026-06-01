@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 
+import { CurrencyProvider } from '@foundation/currency';
 import { Chip } from '@ui/Chip';
 import { Money } from '@ui/Money';
 import { UrgencyDot } from '@ui/UrgencyDot';
@@ -16,6 +17,22 @@ describe('Money', () => {
   it('pads single-digit pence', () => {
     render(<Money value={12.05} />);
     expect(screen.getByText('.05')).toBeOnTheScreen();
+  });
+
+  it('renders the household currency glyph', () => {
+    render(
+      <CurrencyProvider value="USD">
+        <Money value={3.25} />
+      </CurrencyProvider>,
+    );
+    expect(screen.getByText('$')).toBeOnTheScreen();
+    expect(screen.getByText('3')).toBeOnTheScreen();
+    expect(screen.getByText('.25')).toBeOnTheScreen();
+  });
+
+  it('applies the urgent tone to the amount', () => {
+    render(<Money value={4.5} tone="urgent" />);
+    expect(screen.getByText('4').props.className).toContain('text-urgency-urgent-deep');
   });
 });
 

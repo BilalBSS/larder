@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { groupByUrgency } from '@domain/entities/group-pantry';
 import type { PantryItem } from '@domain/entities/pantry-item';
-import { totalValue, countUseFirst } from '@domain/entities/pantry-stats';
+import { atRiskValue, countUseFirst } from '@domain/entities/pantry-stats';
 
 function mk(overrides: Partial<PantryItem> = {}): PantryItem {
   return {
@@ -36,21 +36,61 @@ function localDateStr(base: Date, offsetDays: number): string {
 
 const NOON = new Date(2026, 5, 1, 12, 0);
 
-describe('totalValue', () => {
-  it('sums quantity times unit cost', () => {
+describe('atRiskValue', () => {
+  it('sums the value of items expiring within four days', () => {
     expect(
-      totalValue([mk({ quantity: 2, lastUnitCost: 1.5 }), mk({ quantity: 3, lastUnitCost: 2 })]),
-    ).toBe(9);
+      atRiskValue(
+        [
+          mk({ quantity: 2, lastUnitCost: 1.5, expirationDate: localDateStr(NOON, 2) }),
+          mk({ quantity: 1, lastUnitCost: 4, expirationDate: localDateStr(NOON, 0) }),
+        ],
+        NOON,
+      ),
+    ).toBe(7);
+  });
+
+  it('includes already-expired items', () => {
+    expect(
+      atRiskValue(
+        [mk({ quantity: 1, lastUnitCost: 3, expirationDate: localDateStr(NOON, -1) })],
+        NOON,
+      ),
+    ).toBe(3);
+  });
+
+  it('includes the four-day boundary but excludes five days', () => {
+    expect(
+      atRiskValue([mk({ lastUnitCost: 2, expirationDate: localDateStr(NOON, 4) })], NOON),
+    ).toBe(2);
+    expect(
+      atRiskValue([mk({ lastUnitCost: 2, expirationDate: localDateStr(NOON, 5) })], NOON),
+    ).toBe(0);
+  });
+
+  it('excludes frozen items', () => {
+    expect(
+      atRiskValue(
+        [mk({ lastUnitCost: 2, isFrozen: true, expirationDate: localDateStr(NOON, 1) })],
+        NOON,
+      ),
+    ).toBe(0);
   });
 
   it('skips items with no cost', () => {
     expect(
-      totalValue([mk({ quantity: 2, lastUnitCost: null }), mk({ quantity: 3, lastUnitCost: 2 })]),
-    ).toBe(6);
+      atRiskValue(
+        [mk({ quantity: 3, lastUnitCost: null, expirationDate: localDateStr(NOON, 1) })],
+        NOON,
+      ),
+    ).toBe(0);
+  });
+
+  it('skips items with no expiry signal', () => {
+    expect(atRiskValue([mk({ quantity: 3, lastUnitCost: 2 })], NOON)).toBe(0);
   });
 
   it('is zero for an empty pantry', () => {
-    expect(totalValue([])).toBe(0);
+    expect(atRiskValue([], NOON)).toBe(0);
   });
 });
 

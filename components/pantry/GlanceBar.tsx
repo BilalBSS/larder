@@ -6,19 +6,19 @@ import { Money } from '@ui/Money';
 import { Text } from '@ui/Text';
 
 export interface GlanceBarProps {
-  readonly value: number;
+  readonly atRisk: number;
   readonly useFirst: number;
   readonly onUseFirst: () => void;
 }
 
-export function GlanceBar({ value, useFirst, onUseFirst }: GlanceBarProps) {
+export function GlanceBar({ atRisk, useFirst, onUseFirst }: GlanceBarProps) {
   const itemWord = useFirst === 1 ? 'item' : 'items';
   return (
     <View className="flex-row overflow-hidden rounded-3 border border-hairline bg-surface">
       <View className="flex-1 p-4">
-        <Eyebrow>Total value</Eyebrow>
+        <Eyebrow>At risk</Eyebrow>
         <View className="mt-1">
-          <Money value={value} big />
+          <Money value={atRisk} big tone={atRisk > 0 ? 'urgent' : 'muted'} />
         </View>
       </View>
       <Pressable

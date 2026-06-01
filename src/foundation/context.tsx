@@ -5,6 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { startSessionRefresh, stopSessionRefresh } from './auth/session';
 import { supabase } from './auth/supabase';
 import { ENTITLEMENTS, type Entitlements, type Tier } from './billing/entitlements';
+import { CurrencyProvider } from './currency';
 import { makeClientLlmRouter, type ClientLlmRouter } from './llm/router';
 import { makeLogger, type Logger } from './monitoring/logger';
 import { initPosthog, type PosthogClient } from './monitoring/posthog';
@@ -14,6 +15,7 @@ export interface AuthUser {
   readonly id: string;
   readonly household_id: string | null;
   readonly tier: Tier;
+  readonly currency: string;
 }
 
 export type AuthStatus = 'loading' | 'authed' | 'anon';
@@ -162,7 +164,11 @@ export function AppContextProvider({
     [logger, posthog, user, authStatus, refreshUser, entitlements, llmRouter],
   );
 
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider value={value}>
+      <CurrencyProvider value={user?.currency ?? 'GBP'}>{children}</CurrencyProvider>
+    </Ctx.Provider>
+  );
 }
 
 export function useAppContext(): AppContextValue {

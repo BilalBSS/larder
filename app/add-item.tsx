@@ -7,6 +7,7 @@ import { ScrollView, View } from 'react-native';
 import { PantryCapError } from '@domain/use-cases/pantry';
 import { pantryService } from '@domain/use-cases/pantry/service';
 import { useEntitlements, useUser } from '@foundation/context';
+import { currencyGlyph, useCurrency } from '@foundation/currency';
 import { Button } from '@ui/Button';
 import { Eyebrow } from '@ui/Eyebrow';
 import { IconButton } from '@ui/IconButton';
@@ -20,6 +21,7 @@ export default function AddItemScreen() {
   const entitlements = useEntitlements();
   const householdId = user?.household_id ?? null;
   const userId = user?.id ?? '';
+  const glyph = currencyGlyph(useCurrency());
 
   const [displayName, setDisplayName] = useState('');
   const [quantity, setQuantity] = useState('');
@@ -158,13 +160,13 @@ export default function AddItemScreen() {
               accessibilityLabel="Expires in days"
             />
           </Field>
-          <Field label="Last cost (£)" className="flex-1">
+          <Field label={`Cost each (${glyph})`} className="flex-1">
             <TextField
               value={lastCost}
               onChangeText={setLastCost}
               placeholder="1.50"
               keyboardType="decimal-pad"
-              accessibilityLabel="Last cost"
+              accessibilityLabel="Cost each"
             />
           </Field>
         </View>

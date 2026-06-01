@@ -18,7 +18,8 @@ export async function loadCurrentUser(
     deps.householdRepo.activeHousehold(userId),
     deps.householdRepo.tier(userId),
   ]);
-  return { id: userId, household_id, tier };
+  const currency = household_id === null ? 'GBP' : await deps.householdRepo.currency(household_id);
+  return { id: userId, household_id, tier, currency };
 }
 
 export function makeLoadAuthUser(supabase: HouseholdRepositoryDeps['supabase']): LoadAuthUser {
