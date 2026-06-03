@@ -1,8 +1,8 @@
 // / request context constructor
-import type { AuthUser } from './types';
-import { extractUser } from './auth';
-import { AttestationFailed, verifyAttestation, type VerifyOptions } from './attestation';
-import type { ServerLogger } from './logger';
+import type { AuthUser } from './types.ts';
+import { extractUser } from './auth.ts';
+import { AttestationFailed, verifyAttestation, type VerifyOptions } from './attestation.ts';
+import type { ServerLogger } from './logger.ts';
 
 export interface RequestContext {
   readonly user: AuthUser;

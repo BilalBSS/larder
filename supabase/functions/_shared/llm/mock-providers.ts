@@ -1,5 +1,5 @@
 // / local dev mock providers
-import type { OCRProvider, RecipesProvider, ServerOCRResult, ServerRecipeResult } from './types';
+import type { OCRProvider, RecipesProvider, ServerOCRResult, ServerRecipeResult } from './types.ts';
 
 export function mockOcrProvider(name: string, confidence = 0.95): OCRProvider {
   return {

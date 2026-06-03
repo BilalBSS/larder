@@ -1,5 +1,5 @@
 // / gemini receipt ocr provider
-import type { OCRProvider, ServerOCRLineItem, ServerOCRResult } from './types';
+import type { OCRProvider, ServerOCRLineItem, ServerOCRResult } from './types.ts';
 
 interface StorageBucket {
   download(path: string): Promise<{ data: Blob | null; error: unknown }>;

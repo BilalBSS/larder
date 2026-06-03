@@ -1,15 +1,19 @@
 // / receipt ocr handler
-import { idempotentInsert, type InsertOutcome, type SelectOutcome } from '../_shared/idempotency';
-import type { RequestContext } from '../_shared/context';
-import type { ServerLogger } from '../_shared/logger';
-import type { OCRProvider, ServerOCRLineItem } from '../_shared/llm/types';
-import { runOcr } from '../_shared/llm/router';
-import { check as checkRateLimit, type RedisLike } from '../_shared/ratelimit';
+import {
+  idempotentInsert,
+  type InsertOutcome,
+  type SelectOutcome,
+} from '../_shared/idempotency.ts';
+import type { RequestContext } from '../_shared/context.ts';
+import type { ServerLogger } from '../_shared/logger.ts';
+import type { OCRProvider, ServerOCRLineItem } from '../_shared/llm/types.ts';
+import { runOcr } from '../_shared/llm/router.ts';
+import { check as checkRateLimit, type RedisLike } from '../_shared/ratelimit.ts';
 import {
   precheck as precheckSpend,
   record as recordSpend,
   type SpendingRedis,
-} from '../_shared/spending-cap';
+} from '../_shared/spending-cap.ts';
 
 export interface ReceiptOcrRequest {
   readonly image_storage_key: string;
