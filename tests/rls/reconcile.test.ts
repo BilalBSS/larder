@@ -158,7 +158,13 @@ runRls('reconcile_receipt rpc', () => {
 
   it('partial-adds in receipt order at the free pantry cap', async () => {
     const admin = adminClient();
-    await admin.from('pantry_items').delete().eq('household_id', f.a.household_id);
+    // / unlink before hard delete
+    await admin
+      .from('receipt_line_items')
+      .update({ pantry_item_id: null })
+      .eq('household_id', f.a.household_id);
+    const cleared = await admin.from('pantry_items').delete().eq('household_id', f.a.household_id);
+    expect(cleared.error).toBeNull();
     const fillers = Array.from({ length: 49 }, (_unused, index) => ({
       household_id: f.a.household_id,
       canonical_name: `filler-${index}`,
@@ -171,6 +177,7 @@ runRls('reconcile_receipt rpc', () => {
     }));
     const seeded = await admin.from('pantry_items').insert(fillers);
     expect(seeded.error).toBeNull();
+    expect(await pantryCount(f.a.household_id)).toBe(49);
 
     const { receiptId } = await seedReceipt(f.a.household_id, f.a.user_id);
     const res = await anonClient(f.a.jwt).rpc('reconcile_receipt', {
