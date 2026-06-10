@@ -79,6 +79,40 @@ runRls('budgets isolation', () => {
     expect(seen.data).toEqual([{ user_id: f.a.user_id, monthly_limit: 200 }]);
   });
 
+  it('co-member cannot forge or edit a peer personal budget but can set the household one', async () => {
+    const admin = adminClient();
+    await admin
+      .from('household_members')
+      .upsert(
+        { household_id: f.a.household_id, user_id: f.b.user_id, role: 'member' },
+        { onConflict: 'household_id,user_id', ignoreDuplicates: true },
+      );
+
+    const forge = await anonClient(f.b.jwt).from('budgets').insert({
+      household_id: f.a.household_id,
+      scope: 'personal',
+      user_id: f.a.user_id,
+      monthly_limit: 999,
+    });
+    expect(forge.error).not.toBeNull();
+
+    const edit = await anonClient(f.b.jwt)
+      .from('budgets')
+      .update({ monthly_limit: 999 })
+      .eq('household_id', f.a.household_id)
+      .eq('scope', 'personal')
+      .eq('user_id', f.a.user_id)
+      .select('id');
+    expect(edit.error === null && (edit.data ?? []).length === 0).toBe(true);
+
+    const householdWrite = await anonClient(f.b.jwt).from('budgets').insert({
+      household_id: f.a.household_id,
+      scope: 'household',
+      monthly_limit: 700,
+    });
+    expect(householdWrite.error).toBeNull();
+  });
+
   it('outsider reads zero rows from another household', async () => {
     const admin = adminClient();
     const seeded = await admin
