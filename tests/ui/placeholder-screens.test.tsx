@@ -1,7 +1,6 @@
 import { render, screen } from '@testing-library/react-native';
 
 import CookScreen from '@/app/(tabs)/cook';
-import SpendingScreen from '@/app/(tabs)/spending';
 import YouScreen from '@/app/(tabs)/you';
 import { useUser } from '@foundation/context';
 
@@ -19,14 +18,6 @@ describe('CookScreen', () => {
     render(<CookScreen />);
     expect(screen.getByText('Cook')).toBeOnTheScreen();
     expect(screen.getByText('Cooking is coming soon.')).toBeOnTheScreen();
-  });
-});
-
-describe('SpendingScreen', () => {
-  it('renders its placeholder empty state', () => {
-    render(<SpendingScreen />);
-    expect(screen.getByText('Spending')).toBeOnTheScreen();
-    expect(screen.getByText('Spending is coming soon.')).toBeOnTheScreen();
   });
 });
 
