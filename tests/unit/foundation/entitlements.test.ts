@@ -23,13 +23,15 @@ describe('ENTITLEMENTS', () => {
     }
   });
 
-  it('free has restrictive caps', () => {
+  it('free has restrictive caps but the full spending surface', () => {
     const free = ENTITLEMENTS.free;
     expect(free.pantry_item_cap).toBe(50);
     expect(free.receipts_per_month).toBe(8);
     expect(free.recipes_per_day).toBe(10);
     expect(free.receipt_archive_days).toBe(30);
-    expect(free.spending_dashboard).toBe(false);
+    expect(free.spending_dashboard).toBe(true);
+    expect(free.settle_up).toBe(true);
+    expect(free.per_user_attribution).toBe(true);
     expect(free.creative_recipes).toBe(false);
     expect(free.multi_user_household).toBe(false);
   });
@@ -42,7 +44,6 @@ describe('ENTITLEMENTS', () => {
       expect(e.creative_recipes).toBe(true);
       expect(e.oauth_inbox).toBe(true);
       expect(e.multi_user_household).toBe(false);
-      expect(e.settle_up).toBe(false);
       expect(e.realtime_coedit).toBe(false);
     }
   });
