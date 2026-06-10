@@ -136,6 +136,58 @@ describe('householdRepository.currency', () => {
   });
 });
 
+describe('householdRepository.members', () => {
+  it('maps active membership rows', async () => {
+    const repo = makeHouseholdRepository({
+      supabase: stubSupabase({
+        household_members: {
+          data: [
+            { user_id: 'u-1', role: 'owner' },
+            { user_id: 'u-2', role: 'child' },
+          ],
+          error: null,
+        },
+      }),
+    });
+    expect(await repo.members('h-1')).toEqual([
+      { userId: 'u-1', role: 'owner' },
+      { userId: 'u-2', role: 'child' },
+    ]);
+  });
+
+  it('throws when the read errors', async () => {
+    const repo = makeHouseholdRepository({
+      supabase: stubSupabase({ household_members: { data: null, error: { message: 'boom' } } }),
+    });
+    await expect(repo.members('h-1')).rejects.toEqual({ message: 'boom' });
+  });
+});
+
+describe('householdRepository.householdType', () => {
+  it('returns the stored type', async () => {
+    const repo = makeHouseholdRepository({
+      supabase: stubSupabase({
+        households: { data: { household_type: 'roommates' }, error: null },
+      }),
+    });
+    expect(await repo.householdType('h-1')).toBe('roommates');
+  });
+
+  it('defaults to family when no row', async () => {
+    const repo = makeHouseholdRepository({
+      supabase: stubSupabase({ households: { data: null, error: null } }),
+    });
+    expect(await repo.householdType('h-1')).toBe('family');
+  });
+
+  it('defaults to family on an unrecognized value', async () => {
+    const repo = makeHouseholdRepository({
+      supabase: stubSupabase({ households: { data: { household_type: 'commune' }, error: null } }),
+    });
+    expect(await repo.householdType('h-1')).toBe('family');
+  });
+});
+
 describe('householdRepository.setCurrency', () => {
   it('resolves on a successful update', async () => {
     const repo = makeHouseholdRepository({

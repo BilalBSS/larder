@@ -15,10 +15,11 @@ interface Calls {
   is: unknown[][];
   gte: unknown[][];
   order: unknown[][];
+  limit: unknown[][];
 }
 
 function stub(byTable: Record<string, Result>) {
-  const calls: Calls = { select: [], eq: [], is: [], gte: [], order: [] };
+  const calls: Calls = { select: [], eq: [], is: [], gte: [], order: [], limit: [] };
   const make = (result: Result) => {
     const builder = {
       select: (...args: unknown[]) => {
@@ -39,9 +40,14 @@ function stub(byTable: Record<string, Result>) {
       },
       order: (...args: unknown[]) => {
         calls.order.push(args);
-        return Promise.resolve(result);
+        return builder;
+      },
+      limit: (...args: unknown[]) => {
+        calls.limit.push(args);
+        return builder;
       },
       maybeSingle: () => Promise.resolve(result),
+      then: (resolve: (value: Result) => void) => resolve(result),
     };
     return builder;
   };
@@ -129,5 +135,24 @@ describe('receiptRepository.countThisMonth', () => {
     const { supabase } = stub({ receipts: { count: null, error: { message: 'down' } } });
     const repo = makeReceiptRepository({ supabase });
     await expect(repo.countThisMonth('h-1')).rejects.toEqual({ message: 'down' });
+  });
+});
+
+describe('receiptRepository.list', () => {
+  it('lists live receipts newest scan first', async () => {
+    const { supabase, calls } = stub({ receipts: { data: [receiptRow], error: null } });
+    const repo = makeReceiptRepository({ supabase });
+    const receipts = await repo.list('h-1', 5);
+    expect(receipts[0]).toMatchObject({ id: 'r-1', ocrStatus: 'succeeded' });
+    expect(calls.eq).toContainEqual(['household_id', 'h-1']);
+    expect(calls.is).toContainEqual(['deleted_at', null]);
+    expect(calls.order).toContainEqual(['created_at', { ascending: false }]);
+    expect(calls.limit).toContainEqual([5]);
+  });
+
+  it('throws when the list errors', async () => {
+    const { supabase } = stub({ receipts: { data: null, error: { message: 'boom' } } });
+    const repo = makeReceiptRepository({ supabase });
+    await expect(repo.list('h-1', 5)).rejects.toEqual({ message: 'boom' });
   });
 });

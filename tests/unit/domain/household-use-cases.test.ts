@@ -9,6 +9,8 @@ function fakeRepo(overrides: Partial<HouseholdRepository> = {}): HouseholdReposi
     tier: async () => 'free',
     currency: async () => 'GBP',
     setCurrency: async () => undefined,
+    members: async () => [],
+    householdType: async () => 'family',
     ...overrides,
   };
 }

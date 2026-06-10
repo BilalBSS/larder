@@ -18,6 +18,7 @@ export interface ReceiptWithLines {
 export interface ReceiptRepository {
   get(receiptId: string): Promise<ReceiptWithLines | null>;
   countThisMonth(householdId: string): Promise<number>;
+  list(householdId: string, limit: number): Promise<Receipt[]>;
 }
 
 export interface ReceiptRepositoryDeps {
@@ -63,6 +64,18 @@ export function makeReceiptRepository(deps: ReceiptRepositoryDeps): ReceiptRepos
       if (error !== null) throw error;
       if (count === null) throw new Error('receipt_count_unavailable');
       return count;
+    },
+
+    async list(householdId, limit) {
+      const { data, error } = await deps.supabase
+        .from('receipts')
+        .select('*')
+        .eq('household_id', householdId)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      if (error !== null) throw error;
+      return ((data ?? []) as unknown[]).map((row) => rowToReceipt(parseReceiptRow(row)));
     },
   };
 }
