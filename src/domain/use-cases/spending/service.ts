@@ -1,5 +1,5 @@
 // / wired spending service
-import { makeBudgetRepository } from '@data/repositories/budget-repository';
+import { makeBudgetRepository, type HouseholdBudgets } from '@data/repositories/budget-repository';
 import { makeHouseholdRepository } from '@data/repositories/household-repository';
 import { makeReceiptRepository } from '@data/repositories/receipt-repository';
 import { makeSpendingRepository } from '@data/repositories/spending-repository';
@@ -8,8 +8,11 @@ import { supabase } from '@foundation/auth/supabase';
 import { getDashboard, type DashboardData } from './get-dashboard';
 import { clearBudget, setBudget, type BudgetInput } from './set-budget';
 
+export type { HouseholdBudgets } from '@data/repositories/budget-repository';
+
 export interface SpendingService {
   dashboard(householdId: string, userId: string): Promise<DashboardData>;
+  budgets(householdId: string, userId: string): Promise<HouseholdBudgets>;
   setBudget(input: BudgetInput, monthlyLimit: number): Promise<void>;
   clearBudget(input: BudgetInput): Promise<void>;
 }
@@ -33,6 +36,7 @@ export const spendingService: SpendingService = {
       householdId,
       userId,
     ),
+  budgets: (householdId, userId) => budgetRepo.listActive(householdId, userId),
   setBudget: (input, monthlyLimit) => setBudget(budgetRepo, input, monthlyLimit),
   clearBudget: (input) => clearBudget(budgetRepo, input),
 };
