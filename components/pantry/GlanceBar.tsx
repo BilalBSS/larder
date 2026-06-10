@@ -7,18 +7,33 @@ import { Text } from '@ui/Text';
 
 export interface GlanceBarProps {
   readonly atRisk: number;
+  readonly atRiskCount: number;
   readonly useFirst: number;
   readonly onUseFirst: () => void;
 }
 
-export function GlanceBar({ atRisk, useFirst, onUseFirst }: GlanceBarProps) {
+export function GlanceBar({ atRisk, atRiskCount, useFirst, onUseFirst }: GlanceBarProps) {
   const itemWord = useFirst === 1 ? 'item' : 'items';
+  const riskWord = atRiskCount === 1 ? 'item' : 'items';
   return (
     <View className="flex-row overflow-hidden rounded-3 border border-hairline bg-surface">
       <View className="flex-1 p-4">
         <Eyebrow>At risk</Eyebrow>
         <View className="mt-1">
-          <Money value={atRisk} big tone={atRisk > 0 ? 'urgent' : 'muted'} />
+          {atRisk > 0 ? (
+            <Money value={atRisk} big tone="urgent" />
+          ) : atRiskCount > 0 ? (
+            <View className="flex-row items-baseline gap-1">
+              <Text variant="num" numSize="xl" tone="urgent" maxFontSizeMultiplier={1.3}>
+                {String(atRiskCount)}
+              </Text>
+              <Text variant="meta" tone="mid" maxFontSizeMultiplier={1.3}>
+                {riskWord}
+              </Text>
+            </View>
+          ) : (
+            <Money value={0} big tone="muted" />
+          )}
         </View>
       </View>
       <Pressable

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { groupByUrgency } from '@domain/entities/group-pantry';
 import type { PantryItem } from '@domain/entities/pantry-item';
-import { atRiskValue, countUseFirst } from '@domain/entities/pantry-stats';
+import { atRiskCount, atRiskValue, countUseFirst } from '@domain/entities/pantry-stats';
 
 function mk(overrides: Partial<PantryItem> = {}): PantryItem {
   return {
@@ -91,6 +91,30 @@ describe('atRiskValue', () => {
 
   it('is zero for an empty pantry', () => {
     expect(atRiskValue([], NOON)).toBe(0);
+  });
+});
+
+describe('atRiskCount', () => {
+  it('counts expiring items regardless of cost', () => {
+    expect(
+      atRiskCount(
+        [
+          mk({ lastUnitCost: null, expirationDate: localDateStr(NOON, 1) }),
+          mk({ id: 'b', lastUnitCost: 2, expirationDate: localDateStr(NOON, 4) }),
+          mk({ id: 'c', expirationDate: localDateStr(NOON, 9) }),
+        ],
+        NOON,
+      ),
+    ).toBe(2);
+  });
+
+  it('excludes frozen items and those without expiry', () => {
+    expect(
+      atRiskCount(
+        [mk({ isFrozen: true, expirationDate: localDateStr(NOON, 1) }), mk({ id: 'b' })],
+        NOON,
+      ),
+    ).toBe(0);
   });
 });
 

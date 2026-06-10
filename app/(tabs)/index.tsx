@@ -9,7 +9,7 @@ import { GlanceBar } from '@/components/pantry/GlanceBar';
 import { PantryRow } from '@/components/pantry/PantryRow';
 import { usePantry } from '@/components/pantry/usePantry';
 import { groupByUrgency } from '@domain/entities/group-pantry';
-import { atRiskValue, countUseFirst } from '@domain/entities/pantry-stats';
+import { atRiskCount, atRiskValue, countUseFirst } from '@domain/entities/pantry-stats';
 import { useUser } from '@foundation/context';
 import { Button } from '@ui/Button';
 import { Card } from '@ui/Card';
@@ -31,6 +31,7 @@ export default function PantryScreen() {
 
   const sections = useMemo(() => groupByUrgency(items, loadedAt), [items, loadedAt]);
   const atRisk = useMemo(() => atRiskValue(items, loadedAt), [items, loadedAt]);
+  const atRiskItems = useMemo(() => atRiskCount(items, loadedAt), [items, loadedAt]);
   const useFirst = useMemo(() => countUseFirst(sections), [sections]);
 
   if (householdId === null) {
@@ -78,7 +79,12 @@ export default function PantryScreen() {
       {/* / scrollview ok under 80 */}
       <ScrollView contentContainerClassName="gap-3 px-4 pb-[96px]">
         {!isEmpty ? (
-          <GlanceBar atRisk={atRisk} useFirst={useFirst} onUseFirst={() => setFilter('urgent')} />
+          <GlanceBar
+            atRisk={atRisk}
+            atRiskCount={atRiskItems}
+            useFirst={useFirst}
+            onUseFirst={() => setFilter('urgent')}
+          />
         ) : null}
         {!isEmpty ? <FilterChips value={filter} onChange={setFilter} sections={sections} /> : null}
         {error !== null ? (
