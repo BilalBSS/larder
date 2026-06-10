@@ -8,6 +8,8 @@ import { supabase } from '@foundation/auth/supabase';
 
 import { reconcileReceipt, type ReconcileLine, type ReconcileResult } from './reconcile';
 
+export type { ReceiptWithLines } from '@data/repositories/receipt-repository';
+
 export interface ReceiptService {
   get(receiptId: string): Promise<ReceiptWithLines | null>;
   countThisMonth(householdId: string): Promise<number>;
