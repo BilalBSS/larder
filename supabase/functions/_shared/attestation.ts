@@ -1,5 +1,5 @@
 // / server attestation verifier
-import type { AttestationToken } from './types';
+import type { AttestationToken } from './types.ts';
 
 const DEV_STUB_PREFIX = 'dev-stub:';
 const MAX_TOKEN_AGE_MS = 5 * 60 * 1000;

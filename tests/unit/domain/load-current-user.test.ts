@@ -7,30 +7,38 @@ function repoStub(overrides: Partial<HouseholdRepository> = {}): HouseholdReposi
   return {
     activeHousehold: async () => 'h-1',
     tier: async () => 'free',
+    currency: async () => 'GBP',
+    setCurrency: async () => undefined,
     ...overrides,
   };
 }
 
 describe('loadCurrentUser', () => {
-  it('builds an auth user from household + tier', async () => {
+  it('builds an auth user from household, tier, and currency', async () => {
     const user = await loadCurrentUser(
       {
         householdRepo: repoStub({
           activeHousehold: async () => 'h-9',
           tier: async () => 'household_yearly',
+          currency: async () => 'USD',
         }),
       },
       'u-1',
     );
-    expect(user).toEqual({ id: 'u-1', household_id: 'h-9', tier: 'household_yearly' });
+    expect(user).toEqual({
+      id: 'u-1',
+      household_id: 'h-9',
+      tier: 'household_yearly',
+      currency: 'USD',
+    });
   });
 
-  it('keeps household_id null for a user without a household', async () => {
+  it('defaults currency to GBP without a household', async () => {
     const user = await loadCurrentUser(
       { householdRepo: repoStub({ activeHousehold: async () => null }) },
       'u-2',
     );
-    expect(user).toEqual({ id: 'u-2', household_id: null, tier: 'free' });
+    expect(user).toEqual({ id: 'u-2', household_id: null, tier: 'free', currency: 'GBP' });
   });
 
   it('defaults to the free tier', async () => {

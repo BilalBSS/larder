@@ -1,5 +1,5 @@
 // / spending cap fail closed
-import type { ServerLogger } from './logger';
+import type { ServerLogger } from './logger.ts';
 
 export interface SpendingRedis {
   get(key: string): Promise<number | null>;

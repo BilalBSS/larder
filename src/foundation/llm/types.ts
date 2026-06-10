@@ -1,15 +1,3 @@
-export interface RecipeProvider {
-  readonly name: string;
-  generate(req: RecipeGenerationRequest): Promise<RecipeGenerationResult>;
-  estimatedCostPerCall(req: RecipeGenerationRequest): number;
-}
-
-export interface OCRProvider {
-  readonly name: string;
-  extract(req: ReceiptOCRRequest): Promise<ReceiptOCRResult>;
-  estimatedCostPerCall(): number;
-}
-
 export interface RecipeGenerationRequest {
   pantry_state: PantryStateSnapshot;
   dietary_preferences: DietaryPreference[];
@@ -27,19 +15,16 @@ export interface RecipeGenerationResult {
 
 export interface ReceiptOCRRequest {
   image_storage_key: string;
-  expected_format?: 'us_receipt' | 'european_receipt' | 'unknown' | undefined;
+  household_id: string;
 }
 
-export interface ReceiptOCRResult {
-  store_name: string | null;
-  total_amount: number;
-  tax_amount: number | null;
-  purchased_at: Date | null;
-  line_items: ParsedLineItem[];
-  confidence: number;
-  cost_usd: number;
-  provider_name: string;
-  latency_ms: number;
+export type ReceiptOCRStatus = 'pending' | 'succeeded' | 'failed';
+
+export interface ReceiptOCRResponse {
+  receipt_id: string;
+  status: ReceiptOCRStatus;
+  line_items?: ParsedLineItem[] | undefined;
+  created: boolean;
 }
 
 export interface PantryStateSnapshot {

@@ -9,7 +9,7 @@ import { GlanceBar } from '@/components/pantry/GlanceBar';
 import { PantryRow } from '@/components/pantry/PantryRow';
 import { usePantry } from '@/components/pantry/usePantry';
 import { groupByUrgency } from '@domain/entities/group-pantry';
-import { totalValue, countUseFirst } from '@domain/entities/pantry-stats';
+import { atRiskValue, countUseFirst } from '@domain/entities/pantry-stats';
 import { useUser } from '@foundation/context';
 import { Button } from '@ui/Button';
 import { Card } from '@ui/Card';
@@ -30,7 +30,7 @@ export default function PantryScreen() {
   const [filter, setFilter] = useState<PantryFilter>('all');
 
   const sections = useMemo(() => groupByUrgency(items, loadedAt), [items, loadedAt]);
-  const value = useMemo(() => totalValue(items), [items]);
+  const atRisk = useMemo(() => atRiskValue(items, loadedAt), [items, loadedAt]);
   const useFirst = useMemo(() => countUseFirst(sections), [sections]);
 
   if (householdId === null) {
@@ -78,7 +78,7 @@ export default function PantryScreen() {
       {/* / scrollview ok under 80 */}
       <ScrollView contentContainerClassName="gap-3 px-4 pb-[96px]">
         {!isEmpty ? (
-          <GlanceBar value={value} useFirst={useFirst} onUseFirst={() => setFilter('urgent')} />
+          <GlanceBar atRisk={atRisk} useFirst={useFirst} onUseFirst={() => setFilter('urgent')} />
         ) : null}
         {!isEmpty ? <FilterChips value={filter} onChange={setFilter} sections={sections} /> : null}
         {error !== null ? (
@@ -116,6 +116,7 @@ export default function PantryScreen() {
                     key={item.id}
                     item={item}
                     now={loadedAt}
+                    onPress={(target) => router.push(`/item/${target.id}`)}
                     onRemove={remove}
                     last={itemIndex === section.items.length - 1}
                   />
@@ -125,7 +126,7 @@ export default function PantryScreen() {
           </Card>
         )}
       </ScrollView>
-      <FAB icon={Plus} onPress={goAdd} accessibilityLabel="Add item" />
+      <FAB onPress={() => router.push('/add')} accessibilityLabel="Add to pantry" />
     </Screen>
   );
 }

@@ -1,11 +1,10 @@
 // / llm barrel
 export type {
-  RecipeProvider,
-  OCRProvider,
   RecipeGenerationRequest,
   RecipeGenerationResult,
   ReceiptOCRRequest,
-  ReceiptOCRResult,
+  ReceiptOCRResponse,
+  ReceiptOCRStatus,
   PantryStateSnapshot,
   PantryItemSnapshot,
   DietaryPreference,

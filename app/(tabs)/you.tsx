@@ -1,17 +1,24 @@
-// / you tab placeholder
-import { View } from 'react-native';
+// / you tab
+import { ChevronRight } from 'lucide-react-native';
+import { router } from 'expo-router';
+import { Pressable, View } from 'react-native';
 
 import { supabase } from '@foundation/auth/supabase';
 import { useUser } from '@foundation/context';
+import { useCurrency } from '@foundation/currency';
 import { Avatar } from '@ui/Avatar';
 import { Button } from '@ui/Button';
 import { Card } from '@ui/Card';
+import { Eyebrow } from '@ui/Eyebrow';
+import { Icon } from '@ui/Icon';
 import { Screen } from '@ui/Screen';
 import { Text } from '@ui/Text';
+import { MUTED } from '@ui/tokens';
 import { TopBar } from '@ui/TopBar';
 
 export default function YouScreen() {
   const user = useUser();
+  const currency = useCurrency();
 
   return (
     <Screen edges={['top']}>
@@ -30,14 +37,26 @@ export default function YouScreen() {
             </View>
           </Card>
         ) : null}
-        <View className="flex-1 items-center justify-center">
-          <Text variant="display" className="text-center">
-            Settings are coming soon.
-          </Text>
-          <Text variant="body" tone="mid" className="mt-2 text-center">
-            Manage your household and preferences here.
-          </Text>
-        </View>
+
+        <Card>
+          <Pressable
+            onPress={() => router.push('/currency')}
+            accessibilityRole="button"
+            accessibilityLabel={`Currency, ${currency}`}
+            className="flex-row items-center justify-between px-4"
+            style={{ minHeight: 52 }}
+          >
+            <View>
+              <Eyebrow>Currency</Eyebrow>
+              <Text variant="body" className="mt-[2px]">
+                {currency}
+              </Text>
+            </View>
+            <Icon icon={ChevronRight} accessibilityLabel="" size={18} color={MUTED} />
+          </Pressable>
+        </Card>
+
+        <View className="flex-1" />
         <View className="pb-4">
           <Button label="Sign out" kind="secondary" onPress={signOut} full />
         </View>

@@ -7,6 +7,7 @@ export interface ServerOCRRequest {
 export interface ServerOCRLineItem {
   readonly raw_text: string;
   readonly canonical_name: string | null;
+  readonly category: string | null;
   readonly quantity: number | null;
   readonly unit: string | null;
   readonly unit_price: number | null;

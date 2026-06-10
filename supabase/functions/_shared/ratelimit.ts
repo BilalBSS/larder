@@ -1,5 +1,5 @@
 // / rate limit fail open
-import type { ServerLogger } from './logger';
+import type { ServerLogger } from './logger.ts';
 
 export interface RedisLike {
   incr(key: string): Promise<number>;

@@ -12,10 +12,12 @@ function stubSupabase(byTable: Record<string, Result>): Pick<SupabaseClient, 'fr
   const make = (result: Result) => {
     const builder = {
       select: () => builder,
+      update: () => builder,
       eq: () => builder,
       is: () => builder,
       order: () => Promise.resolve(result),
       maybeSingle: () => Promise.resolve(result),
+      then: (resolve: (r: Result) => void) => resolve(result),
     };
     return builder;
   };
@@ -101,5 +103,51 @@ describe('householdRepository.tier', () => {
       supabase: stubSupabase({ subscriptions: { data: { tier: 'platinum' }, error: null } }),
     });
     expect(await repo.tier('u-1')).toBe('free');
+  });
+});
+
+describe('householdRepository.currency', () => {
+  it('returns the stored currency', async () => {
+    const repo = makeHouseholdRepository({
+      supabase: stubSupabase({ households: { data: { currency: 'USD' }, error: null } }),
+    });
+    expect(await repo.currency('h-1')).toBe('USD');
+  });
+
+  it('defaults to GBP when no household row', async () => {
+    const repo = makeHouseholdRepository({
+      supabase: stubSupabase({ households: { data: null, error: null } }),
+    });
+    expect(await repo.currency('h-1')).toBe('GBP');
+  });
+
+  it('defaults to GBP when the read errors', async () => {
+    const repo = makeHouseholdRepository({
+      supabase: stubSupabase({ households: { data: null, error: { message: 'down' } } }),
+    });
+    expect(await repo.currency('h-1')).toBe('GBP');
+  });
+
+  it('defaults to GBP when the column is null', async () => {
+    const repo = makeHouseholdRepository({
+      supabase: stubSupabase({ households: { data: { currency: null }, error: null } }),
+    });
+    expect(await repo.currency('h-1')).toBe('GBP');
+  });
+});
+
+describe('householdRepository.setCurrency', () => {
+  it('resolves on a successful update', async () => {
+    const repo = makeHouseholdRepository({
+      supabase: stubSupabase({ households: { data: null, error: null } }),
+    });
+    await expect(repo.setCurrency('h-1', 'EUR')).resolves.toBeUndefined();
+  });
+
+  it('throws when the update errors', async () => {
+    const repo = makeHouseholdRepository({
+      supabase: stubSupabase({ households: { data: null, error: { message: 'no' } } }),
+    });
+    await expect(repo.setCurrency('h-1', 'EUR')).rejects.toEqual({ message: 'no' });
   });
 });

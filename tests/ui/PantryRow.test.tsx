@@ -92,6 +92,13 @@ describe('PantryRow', () => {
     expect(screen.queryByText('use first')).toBeNull();
   });
 
+  it('navigates on press', () => {
+    const onPress = jest.fn();
+    render(<PantryRow item={item()} now={NOW} onPress={onPress} />);
+    fireEvent.press(screen.getByLabelText(/Bananas/));
+    expect(onPress).toHaveBeenCalledWith(expect.objectContaining({ id: 'i-1' }));
+  });
+
   it('confirms before removing on long press', () => {
     const onRemove = jest.fn();
     const spy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);

@@ -49,6 +49,7 @@ export function IconButton({
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
+      accessibilityState={{ disabled }}
       accessibilityLabel={accessibilityLabel}
       hitSlop={8}
     >

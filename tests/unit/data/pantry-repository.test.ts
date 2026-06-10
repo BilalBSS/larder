@@ -46,6 +46,7 @@ function stubSupabase(result: Result) {
       calls.order.push(args);
       return builder;
     },
+    maybeSingle: () => Promise.resolve(result),
     then: (resolve: (r: Result) => void) => resolve(result),
   };
   const supabase = { from: () => builder } as unknown as Pick<SupabaseClient, 'from'>;
@@ -191,5 +192,66 @@ describe('pantryRepository.remove', () => {
     await expect(repo.remove({ id: 'i-1', householdId: 'h-1', userId: 'u-1' })).rejects.toEqual({
       message: 'fail',
     });
+  });
+});
+
+describe('pantryRepository.get', () => {
+  it('maps a single live row scoped to the household', async () => {
+    const { supabase, calls } = stubSupabase({ data: row({ id: 'g-1' }), error: null });
+    const repo = makePantryRepository({ supabase });
+    const found = await repo.get('g-1', 'h-1');
+    expect(found).toMatchObject({ id: 'g-1', canonicalName: 'bananas' });
+    expect(calls.eq).toContainEqual(['id', 'g-1']);
+    expect(calls.eq).toContainEqual(['household_id', 'h-1']);
+    expect(calls.is).toContainEqual(['deleted_at', null]);
+  });
+
+  it('returns null when no row is found', async () => {
+    const { supabase } = stubSupabase({ data: null, error: null });
+    const repo = makePantryRepository({ supabase });
+    expect(await repo.get('missing', 'h-1')).toBeNull();
+  });
+
+  it('throws when the query errors', async () => {
+    const { supabase } = stubSupabase({ data: null, error: { message: 'boom' } });
+    const repo = makePantryRepository({ supabase });
+    await expect(repo.get('g-1', 'h-1')).rejects.toEqual({ message: 'boom' });
+  });
+});
+
+describe('pantryRepository.update', () => {
+  it('patches quantity and freeze scoped to live rows', async () => {
+    const { supabase, calls } = stubSupabase({ data: null, error: null });
+    const repo = makePantryRepository({ supabase });
+    await repo.update({
+      id: 'i-1',
+      householdId: 'h-1',
+      userId: 'u-9',
+      quantity: 3,
+      isFrozen: true,
+    });
+    expect(calls.update[0]).toEqual({
+      updated_by_user_id: 'u-9',
+      quantity: 3,
+      is_frozen: true,
+    });
+    expect(calls.eq).toContainEqual(['id', 'i-1']);
+    expect(calls.eq).toContainEqual(['household_id', 'h-1']);
+    expect(calls.is).toContainEqual(['deleted_at', null]);
+  });
+
+  it('omits fields that were not provided', async () => {
+    const { supabase, calls } = stubSupabase({ data: null, error: null });
+    const repo = makePantryRepository({ supabase });
+    await repo.update({ id: 'i-1', householdId: 'h-1', userId: 'u-9', isFrozen: true });
+    expect(calls.update[0]).toEqual({ updated_by_user_id: 'u-9', is_frozen: true });
+  });
+
+  it('throws when the update errors', async () => {
+    const { supabase } = stubSupabase({ data: null, error: { message: 'no' } });
+    const repo = makePantryRepository({ supabase });
+    await expect(
+      repo.update({ id: 'i-1', householdId: 'h-1', userId: 'u-1', quantity: 1 }),
+    ).rejects.toEqual({ message: 'no' });
   });
 });

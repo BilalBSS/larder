@@ -1,5 +1,5 @@
 // / local dev mock providers
-import type { OCRProvider, RecipesProvider, ServerOCRResult, ServerRecipeResult } from './types';
+import type { OCRProvider, RecipesProvider, ServerOCRResult, ServerRecipeResult } from './types.ts';
 
 export function mockOcrProvider(name: string, confidence = 0.95): OCRProvider {
   return {
@@ -14,6 +14,7 @@ export function mockOcrProvider(name: string, confidence = 0.95): OCRProvider {
           {
             raw_text: 'BANANA 1.50',
             canonical_name: 'banana',
+            category: 'produce',
             quantity: 1,
             unit: 'each',
             unit_price: 1.5,

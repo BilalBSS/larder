@@ -1,5 +1,5 @@
 // / jwt user extraction
-import type { AuthUser } from './types';
+import type { AuthUser } from './types.ts';
 
 export class InvalidAuth extends Error {
   constructor(reason: string) {

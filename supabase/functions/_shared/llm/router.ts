@@ -1,5 +1,5 @@
 // / server llm fallback router
-import type { ServerLogger } from '../logger';
+import type { ServerLogger } from '../logger.ts';
 import type {
   OCRProvider,
   RecipesProvider,
@@ -7,7 +7,7 @@ import type {
   ServerOCRResult,
   ServerRecipeRequest,
   ServerRecipeResult,
-} from './types';
+} from './types.ts';
 
 export const MIN_CONFIDENCE = 0.7;
 
