@@ -9,6 +9,9 @@ jest.mock('expo-router', () => ({
   router: { back: jest.fn() },
   useLocalSearchParams: jest.fn(() => ({ id: 'r-1' })),
 }));
+jest.mock('@foundation/context', () => ({
+  useUser: jest.fn(() => ({ id: 'u-1', household_id: 'h-1', tier: 'free' })),
+}));
 jest.mock('@domain/use-cases/receipt/service', () => ({
   receiptService: { get: jest.fn() },
 }));
@@ -68,6 +71,16 @@ describe('ReceiptDetailScreen', () => {
     expect(screen.getByText('MILK 2PT')).toBeOnTheScreen();
     expect(screen.getAllByText('2 × £1.50')).toHaveLength(2);
     expect(screen.getByText('1 of 2 items added to your pantry.')).toBeOnTheScreen();
+    expect(mockService.get).toHaveBeenCalledWith('r-1', 'h-1');
+  });
+
+  it('reports zero added honestly when nothing matched', async () => {
+    mockService.get.mockResolvedValue({
+      receipt: receipt(),
+      lineItems: [line({ pantryItemId: null }), line({ id: 'l-2', pantryItemId: null })],
+    });
+    render(<ReceiptDetailScreen />);
+    expect(await screen.findByText('0 of 2 items added to your pantry.')).toBeOnTheScreen();
   });
 
   it('hides totals for a failed scan', async () => {

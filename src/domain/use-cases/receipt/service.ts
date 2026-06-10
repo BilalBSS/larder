@@ -11,7 +11,7 @@ import { reconcileReceipt, type ReconcileLine, type ReconcileResult } from './re
 export type { ReceiptWithLines } from '@data/repositories/receipt-repository';
 
 export interface ReceiptService {
-  get(receiptId: string): Promise<ReceiptWithLines | null>;
+  get(receiptId: string, householdId: string): Promise<ReceiptWithLines | null>;
   countThisMonth(householdId: string): Promise<number>;
   list(householdId: string, limit: number): Promise<Receipt[]>;
   reconcile(receiptId: string, lines: ReconcileLine[]): Promise<ReconcileResult>;
@@ -20,7 +20,7 @@ export interface ReceiptService {
 const repo = makeReceiptRepository({ supabase });
 
 export const receiptService: ReceiptService = {
-  get: (receiptId) => repo.get(receiptId),
+  get: (receiptId, householdId) => repo.get(receiptId, householdId),
   countThisMonth: (householdId) => repo.countThisMonth(householdId),
   list: (householdId, limit) => repo.list(householdId, limit),
   reconcile: (receiptId, lines) => reconcileReceipt({ supabase }, receiptId, lines),

@@ -7,6 +7,7 @@ import { Donut } from '@ui/Donut';
 import { Eyebrow } from '@ui/Eyebrow';
 import { Money } from '@ui/Money';
 import { Text } from '@ui/Text';
+import { MID } from '@ui/tokens';
 
 import { sliceColors } from './donut-colors';
 
@@ -26,7 +27,7 @@ export function CategoryDonut({ breakdown, glyph }: CategoryDonutProps) {
         <Donut
           slices={breakdown.slices.map((slice, index) => ({
             value: slice.total,
-            color: colors[index] ?? '#6B6359',
+            color: colors[index] ?? MID,
           }))}
           accessibilityLabel={summary}
         >
@@ -40,7 +41,7 @@ export function CategoryDonut({ breakdown, glyph }: CategoryDonutProps) {
             <View key={slice.name} className="flex-row items-center gap-2">
               <View
                 className="h-2 w-2 rounded-1"
-                style={{ backgroundColor: colors[index] ?? '#6B6359' }}
+                style={{ backgroundColor: colors[index] ?? MID }}
               />
               <Text variant="body" className="flex-1">
                 {slice.name}

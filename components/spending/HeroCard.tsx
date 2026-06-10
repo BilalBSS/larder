@@ -37,7 +37,7 @@ export function HeroCard({ hero, glyph, onEditBudget }: HeroCardProps) {
         {hero.deltaLabel !== null ? (
           <View
             accessible
-            accessibilityLabel={`${down ? 'Down' : 'Up'} ${hero.deltaLabel}`}
+            accessibilityLabel={hero.deltaSpoken ?? hero.deltaLabel}
             className="flex-row items-center gap-1"
           >
             <Icon

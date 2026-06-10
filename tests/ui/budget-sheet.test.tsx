@@ -66,6 +66,40 @@ describe('BudgetScreen', () => {
     expect(router.back).toHaveBeenCalled();
   });
 
+  it('writes only the changed field and leaves the other untouched', async () => {
+    mockService.budgets.mockResolvedValue({
+      household: budget('household', 640),
+      personal: budget('personal', 400),
+    });
+    render(<BudgetScreen />);
+    await waitFor(() =>
+      expect(screen.getByLabelText('Personal cap amount')).toHaveProp('value', '400'),
+    );
+    fireEvent.changeText(screen.getByLabelText('Personal cap amount'), '450');
+    fireEvent.press(screen.getByText('Save'));
+    await waitFor(() =>
+      expect(mockService.setBudget).toHaveBeenCalledWith(
+        { householdId: 'h-1', userId: 'u-1', target: 'personal' },
+        450,
+      ),
+    );
+    expect(mockService.setBudget).toHaveBeenCalledTimes(1);
+    expect(mockService.clearBudget).not.toHaveBeenCalled();
+  });
+
+  it('accepts comma decimals', async () => {
+    render(<BudgetScreen />);
+    await waitFor(() => expect(mockService.budgets).toHaveBeenCalled());
+    fireEvent.changeText(screen.getByLabelText('Household budget amount'), '6,40');
+    fireEvent.press(screen.getByText('Save'));
+    await waitFor(() =>
+      expect(mockService.setBudget).toHaveBeenCalledWith(
+        { householdId: 'h-1', userId: 'u-1', target: 'household' },
+        6.4,
+      ),
+    );
+  });
+
   it('clears a budget emptied in the sheet', async () => {
     mockService.budgets.mockResolvedValue({
       household: budget('household', 640),

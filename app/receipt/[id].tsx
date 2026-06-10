@@ -5,6 +5,7 @@ import { ScrollView, View } from 'react-native';
 
 import { receiptDateLabel } from '@/components/spending/ReceiptRow';
 import { receiptService, type ReceiptWithLines } from '@domain/use-cases/receipt/service';
+import { useUser } from '@foundation/context';
 import { currencyGlyph, useCurrency } from '@foundation/currency';
 import { Avatar } from '@ui/Avatar';
 import { Money } from '@ui/Money';
@@ -14,16 +15,17 @@ import { Text } from '@ui/Text';
 export default function ReceiptDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const receiptId = typeof params.id === 'string' ? params.id : null;
+  const householdId = useUser()?.household_id ?? null;
   const glyph = currencyGlyph(useCurrency());
 
   const [detail, setDetail] = useState<ReceiptWithLines | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (receiptId === null) return;
+    if (receiptId === null || householdId === null) return;
     let cancelled = false;
     receiptService
-      .get(receiptId)
+      .get(receiptId, householdId)
       .then((loaded) => {
         if (cancelled) return;
         if (loaded === null) {
@@ -38,7 +40,7 @@ export default function ReceiptDetailScreen() {
     return () => {
       cancelled = true;
     };
-  }, [receiptId]);
+  }, [receiptId, householdId]);
 
   const receipt = detail?.receipt ?? null;
   const lines = detail?.lineItems ?? [];
@@ -108,7 +110,7 @@ export default function ReceiptDetailScreen() {
                   </View>
                 </ScrollView>
               ) : null}
-              {added > 0 ? (
+              {lines.length > 0 ? (
                 <Text variant="meta" tone="mid">
                   {`${added} of ${lines.length} items added to your pantry.`}
                 </Text>

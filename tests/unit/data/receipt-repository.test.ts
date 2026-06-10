@@ -92,11 +92,12 @@ describe('receiptRepository.get', () => {
       receipt_line_items: { data: [lineRow], error: null },
     });
     const repo = makeReceiptRepository({ supabase });
-    const result = await repo.get('r-1');
+    const result = await repo.get('r-1', 'h-1');
     expect(result?.receipt).toMatchObject({ id: 'r-1', storeName: 'Tesco', totalAmount: 12.5 });
     expect(result?.lineItems).toHaveLength(1);
     expect(result?.lineItems[0]).toMatchObject({ canonicalName: 'milk', lineTotal: 2 });
     expect(calls.eq).toContainEqual(['id', 'r-1']);
+    expect(calls.eq).toContainEqual(['household_id', 'h-1']);
     expect(calls.is).toContainEqual(['deleted_at', null]);
     expect(calls.eq).toContainEqual(['receipt_id', 'r-1']);
   });
@@ -104,13 +105,13 @@ describe('receiptRepository.get', () => {
   it('returns null when the receipt is missing', async () => {
     const { supabase } = stub({ receipts: { data: null, error: null } });
     const repo = makeReceiptRepository({ supabase });
-    expect(await repo.get('missing')).toBeNull();
+    expect(await repo.get('missing', 'h-1')).toBeNull();
   });
 
   it('throws when the receipt query errors', async () => {
     const { supabase } = stub({ receipts: { data: null, error: { message: 'boom' } } });
     const repo = makeReceiptRepository({ supabase });
-    await expect(repo.get('r-1')).rejects.toEqual({ message: 'boom' });
+    await expect(repo.get('r-1', 'h-1')).rejects.toEqual({ message: 'boom' });
   });
 });
 

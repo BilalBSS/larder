@@ -17,6 +17,7 @@ export interface ButtonProps {
   readonly size?: ButtonSize;
   readonly icon?: LucideIcon;
   readonly full?: boolean;
+  readonly pill?: boolean;
   readonly disabled?: boolean;
   readonly accessibilityLabel?: string;
 }
@@ -69,6 +70,7 @@ export function Button({
   size = 'md',
   icon,
   full = false,
+  pill = false,
   disabled = false,
   accessibilityLabel,
 }: ButtonProps) {
@@ -84,7 +86,7 @@ export function Button({
         <View
           className={`flex-row items-center justify-center ${sizeClass[size]} ${
             pressed && !disabled ? pressedClass[kind] : baseClass[kind]
-          } ${full ? 'w-full' : ''} ${disabled ? 'opacity-40' : ''}`}
+          } ${pill ? 'rounded-pill' : ''} ${full ? 'w-full' : ''} ${disabled ? 'opacity-40' : ''}`}
         >
           {icon !== undefined ? (
             <Icon icon={icon} accessibilityLabel="" size={iconSize[size]} color={iconColor[kind]} />

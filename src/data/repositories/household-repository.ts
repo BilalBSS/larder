@@ -87,7 +87,8 @@ export function makeHouseholdRepository(deps: HouseholdRepositoryDeps): Househol
         .select('household_type')
         .eq('id', householdId)
         .maybeSingle();
-      if (error !== null || data === null) return 'family';
+      if (error !== null) throw error;
+      if (data === null) return 'family';
       const value = (data as unknown as { household_type: string }).household_type;
       return isHouseholdType(value) ? value : 'family';
     },

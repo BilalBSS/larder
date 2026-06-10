@@ -68,6 +68,11 @@ describe('monthKey', () => {
     expect(monthKey('2026-01-01T00:00:00.000Z')).toBe('2026-01');
     expect(keyAt(new Date('2026-01-15T00:00:00.000Z'), 1)).toBe('2025-12');
   });
+
+  it('buckets by utc even when local time is the next month', () => {
+    // / utc not local
+    expect(monthKey('2026-06-30T18:30:00.000Z')).toBe('2026-06');
+  });
 });
 
 describe('monthLabel', () => {

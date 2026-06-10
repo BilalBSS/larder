@@ -11,6 +11,7 @@ import {
   keyAt,
   monthBuckets,
   monthLabel,
+  monthLabelFull,
   scannedBy,
   type CategoryBreakdown,
   type MemberSpend,
@@ -34,6 +35,7 @@ export interface HeroVM {
   readonly total: number;
   readonly deltaPct: number | null;
   readonly deltaLabel: string | null;
+  readonly deltaSpoken: string | null;
   readonly budget: BudgetMeterVM | null;
   readonly pendingNote: boolean;
 }
@@ -102,7 +104,8 @@ export function buildSpendingViewModel(
 ): SpendingViewModel {
   const currentKey = keyAt(data.now, 0);
   const currentLabel = monthLabel(currentKey);
-  const priorLabel = monthLabel(keyAt(data.now, 1));
+  const priorKey = keyAt(data.now, 1);
+  const priorLabel = monthLabel(priorKey);
 
   const scoped = scope === 'mine' ? scannedBy(data.window, selfId) : data.window;
   const scopedCurrent = inMonth(scoped, currentKey);
@@ -124,6 +127,7 @@ export function buildSpendingViewModel(
       total: currentTotal,
       deltaPct: deltaPct(currentTotal, sumTotals(scopedPrior)),
       deltaLabel: deltaLabelFor(currentTotal, sumTotals(scopedPrior), priorLabel),
+      deltaSpoken: deltaSpokenFor(currentTotal, sumTotals(scopedPrior), priorKey),
       budget: budgetMeter(data, scope, currentTotal),
       pendingNote:
         data.window.length === 0 && data.recent.some((receipt) => receipt.ocrStatus === 'pending'),
@@ -153,6 +157,13 @@ function deltaLabelFor(current: number, prior: number, priorLabel: string): stri
   const delta = deltaPct(current, prior);
   if (delta === null) return null;
   return `${Math.abs(delta)}% vs ${priorLabel}`;
+}
+
+function deltaSpokenFor(current: number, prior: number, priorKey: string): string | null {
+  const delta = deltaPct(current, prior);
+  if (delta === null) return null;
+  const direction = delta < 0 ? 'Down' : 'Up';
+  return `${direction} ${Math.abs(delta)} percent versus ${monthLabelFull(priorKey)}`;
 }
 
 function budgetMeter(data: DashboardData, scope: SpendScope, spent: number): BudgetMeterVM | null {

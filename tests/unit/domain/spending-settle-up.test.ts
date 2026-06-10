@@ -34,6 +34,34 @@ describe('settleUp', () => {
     ]);
   });
 
+  it('spills one debtor across two creditors', () => {
+    const result = settleUp(
+      [spend('a', 200), spend('b', 160), spend('c', 0), spend('d', 0)],
+      [member('a'), member('b'), member('c'), member('d')],
+    );
+    expect(result.transfers).toEqual([
+      { fromUserId: 'c', toUserId: 'a', amount: 90 },
+      { fromUserId: 'd', toUserId: 'a', amount: 20 },
+      { fromUserId: 'd', toUserId: 'b', amount: 70 },
+    ]);
+    const paid = result.transfers.reduce((sum, transfer) => sum + transfer.amount, 0);
+    expect(Math.round(paid * 100)).toBe(18000);
+    expect(result.largestTransfer?.amount).toBe(90);
+  });
+
+  it('charges the extra penny to debtors by sort order', () => {
+    const result = settleUp(
+      [spend('a', 0), spend('b', 0), spend('c', 100.01)],
+      [member('a'), member('b'), member('c')],
+    );
+    expect(result.transfers).toEqual([
+      { fromUserId: 'a', toUserId: 'c', amount: 33.34 },
+      { fromUserId: 'b', toUserId: 'c', amount: 33.34 },
+    ]);
+    const received = result.transfers.reduce((sum, transfer) => sum + transfer.amount, 0);
+    expect(Math.round(received * 100)).toBe(6668);
+  });
+
   it('conserves every penny under uneven splits', () => {
     const result = settleUp(
       [spend('a', 100.01), spend('b', 0), spend('c', 0)],
@@ -80,5 +108,21 @@ describe('settleUp', () => {
     const result = settleUp([spend('a', 0), spend('b', 0)], [member('a'), member('b')]);
     expect(result.transfers).toEqual([]);
     expect(result.largestTransfer).toBeNull();
+  });
+
+  it('returns an empty split when only children remain', () => {
+    const result = settleUp(
+      [spend('kid1', 40), spend('kid2', 0)],
+      [member('kid1', 'child'), member('kid2', 'child')],
+    );
+    expect(result).toEqual({ transfers: [], largestTransfer: null, splitCount: 0 });
+  });
+
+  it('needs two adults — one adult plus a child and a former does not split', () => {
+    const result = settleUp(
+      [spend('a', 50), spend('gone', 30, true), spend('kid', 10)],
+      [member('a', 'owner'), member('kid', 'child')],
+    );
+    expect(result).toEqual({ transfers: [], largestTransfer: null, splitCount: 1 });
   });
 });

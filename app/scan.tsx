@@ -105,7 +105,7 @@ export default function ScanScreen() {
           requestId,
         );
         if (ocr.status !== 'succeeded') throw new Error('ocr_incomplete');
-        const fetched = await receiptService.get(ocr.receipt_id);
+        const fetched = await receiptService.get(ocr.receipt_id, householdId);
         if (fetched === null) throw new Error('receipt_missing');
         const canonicalNames = fetched.lineItems
           .map((line) => line.canonicalName)

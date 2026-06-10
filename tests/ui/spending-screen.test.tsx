@@ -39,6 +39,7 @@ function vm(overrides: Partial<SpendingViewModel> = {}): SpendingViewModel {
       total: 60,
       deltaPct: -12,
       deltaLabel: '12% vs May',
+      deltaSpoken: 'Down 12 percent versus May',
       budget: { limit: 100, spent: 60, remaining: 40, over: 0 },
       pendingNote: false,
     },
@@ -184,6 +185,27 @@ describe('SpendingScreen', () => {
     expect(router.push).toHaveBeenCalledWith('/scan');
     fireEvent.press(screen.getByText('Set a budget'));
     expect(router.push).toHaveBeenCalledWith('/budget');
+  });
+
+  it('renders the over-budget state in words, not just color', () => {
+    mockUseSpending.mockReturnValue(
+      hookReturn({
+        vm: vm({
+          hero: {
+            eyebrow: 'Jun household total',
+            total: 130,
+            deltaPct: 8,
+            deltaLabel: '8% vs May',
+            deltaSpoken: 'Up 8 percent versus May',
+            budget: { limit: 100, spent: 130, remaining: 0, over: 30 },
+            pendingNote: false,
+          },
+        }),
+      }),
+    );
+    render(<SpendingScreen />);
+    expect(screen.getByText('£30 over')).toBeOnTheScreen();
+    expect(screen.queryByText('£0 left')).toBeNull();
   });
 
   it('shows the error banner with retry', () => {

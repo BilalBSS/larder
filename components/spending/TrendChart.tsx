@@ -13,6 +13,13 @@ export interface TrendChartProps {
 
 const CHART_HEIGHT = 110;
 const BAR_MAX_HEIGHT = 80;
+const BAR_MIN_HEIGHT = 3;
+
+// / keep tiny months visible
+function barHeight(total: number, max: number): number {
+  if (total <= 0 || max <= 0) return 0;
+  return Math.max(BAR_MIN_HEIGHT, Math.round((total / max) * BAR_MAX_HEIGHT));
+}
 
 export function TrendChart({ buckets, glyph }: TrendChartProps) {
   const max = Math.max(...buckets.map((bucket) => bucket.total), 0);
@@ -37,7 +44,7 @@ export function TrendChart({ buckets, glyph }: TrendChartProps) {
             <View
               className="w-full rounded-1"
               style={{
-                height: max > 0 ? Math.round((bucket.total / max) * BAR_MAX_HEIGHT) : 0,
+                height: barHeight(bucket.total, max),
                 backgroundColor: bucket.current ? TERRACOTTA : EDGE,
               }}
             />

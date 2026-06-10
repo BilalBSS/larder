@@ -85,10 +85,13 @@ describe('buildSpendingViewModel hero', () => {
     expect(household.hero.deltaLabel).toBe('20% vs May');
     expect(household.topEyebrow).toBe('Jun · 2 receipts · 2 cooks');
 
+    expect(household.hero.deltaSpoken).toBe('Up 20 percent versus May');
+
     const mine = buildSpendingViewModel(data({ window }), 'mine', SELF, '£');
     expect(mine.hero.eyebrow).toBe('Jun · you');
     expect(mine.hero.total).toBe(40);
     expect(mine.hero.deltaLabel).toBeNull();
+    expect(mine.hero.deltaSpoken).toBeNull();
   });
 
   it('suppresses cooks when the month is empty', () => {
@@ -156,6 +159,17 @@ describe('buildSpendingViewModel members', () => {
     ];
     const vm = buildSpendingViewModel(data({ window }), 'household', SELF, '£');
     expect(vm.members.rows.map((row) => row.label)).toEqual(['You', 'Partner']);
+  });
+
+  it('threads a departed scanner into a former-member row', () => {
+    const window = [
+      receipt({ totalAmount: 60 }),
+      receipt({ id: 'r-2', scannedByUserId: 'u-gone', totalAmount: 20 }),
+    ];
+    const vm = buildSpendingViewModel(data({ window }), 'household', SELF, '£');
+    const former = vm.members.rows.find((row) => row.userId === 'u-gone');
+    expect(former?.label).toBe('Former member');
+    expect(former?.total).toBe(20);
   });
 
   it('reads even when the month splits cleanly', () => {

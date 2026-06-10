@@ -54,6 +54,21 @@ const MONTHS = [
   'Dec',
 ] as const;
 
+const MONTHS_FULL = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+] as const;
+
 // / all month math utc
 export function monthKey(iso: string): string {
   const date = new Date(iso);
@@ -67,6 +82,10 @@ export function keyAt(now: Date, monthsBack: number): string {
 
 export function monthLabel(key: string): string {
   return MONTHS[Number(key.slice(5)) - 1] ?? '';
+}
+
+export function monthLabelFull(key: string): string {
+  return MONTHS_FULL[Number(key.slice(5)) - 1] ?? '';
 }
 
 export function windowBounds(now: Date, monthsBack: number): { fromIso: string; toIso: string } {

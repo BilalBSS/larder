@@ -26,6 +26,7 @@ export function MemberBreakdown({ members, glyph, onSettleUp }: MemberBreakdownP
           <Button
             kind="accent"
             size="sm"
+            pill
             label={`Settle up · ${proseAmount(glyph, members.pillAmount)}`}
             onPress={onSettleUp}
           />

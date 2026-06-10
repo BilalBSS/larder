@@ -16,7 +16,7 @@ export interface ReceiptWithLines {
 }
 
 export interface ReceiptRepository {
-  get(receiptId: string): Promise<ReceiptWithLines | null>;
+  get(receiptId: string, householdId: string): Promise<ReceiptWithLines | null>;
   countThisMonth(householdId: string): Promise<number>;
   list(householdId: string, limit: number): Promise<Receipt[]>;
 }
@@ -32,11 +32,12 @@ function monthStartIso(now: Date): string {
 
 export function makeReceiptRepository(deps: ReceiptRepositoryDeps): ReceiptRepository {
   return {
-    async get(receiptId) {
+    async get(receiptId, householdId) {
       const receiptRes = await deps.supabase
         .from('receipts')
         .select('*')
         .eq('id', receiptId)
+        .eq('household_id', householdId)
         .is('deleted_at', null)
         .maybeSingle();
       if (receiptRes.error !== null) throw receiptRes.error;
@@ -45,6 +46,7 @@ export function makeReceiptRepository(deps: ReceiptRepositoryDeps): ReceiptRepos
         .from('receipt_line_items')
         .select('*')
         .eq('receipt_id', receiptId)
+        .eq('household_id', householdId)
         .order('created_at', { ascending: true });
       if (linesRes.error !== null) throw linesRes.error;
       const lineRows = (linesRes.data ?? []) as unknown[];
